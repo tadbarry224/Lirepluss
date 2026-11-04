@@ -78,6 +78,8 @@ Ouvrir http://localhost:3000.
 
 ## Structure
 
+Vue d'ensemble (frontend, backend, base de données, GitHub) avec schémas : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 Un seul projet Next.js, organisé en trois couches :
 
 ```
