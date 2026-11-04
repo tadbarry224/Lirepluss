@@ -1,5 +1,6 @@
 import type {
   Atelier,
+  DemandeMentorat,
   Domaine,
   Mentor,
   Message,
@@ -263,4 +264,15 @@ export const temoignagesInitiaux: Temoignage[] = [
   { id: "t2", auteurNom: "Alseny D.", auteurNiveau: "Porteur de projet", mentorId: "m3", texte: "Fatoumata m'a appris à aller voir mes clients avant de dépenser de l'argent. Mon projet de jus locaux a maintenant ses premiers revendeurs.", note: 5, date: dansJours(-15) },
   { id: "t3", auteurNom: "Mariama S.", auteurNiveau: "Étudiante", mentorId: "m11", texte: "Néné m'a raconté son propre parcours et m'a aidée à rendre mon projet d'études cohérent. Je me sens beaucoup plus prête pour mon entretien.", note: 4, date: dansJours(-8) },
   { id: "t4", auteurNom: "Ibrahima T.", auteurNiveau: "Étudiant", mentorId: "m7", texte: "Je n'osais montrer mes textes à personne. Kadiatou m'a encouragé et m'a expliqué comment fonctionne l'édition. J'ai terminé mon premier recueil de nouvelles.", note: 5, date: dansJours(-4) },
+];
+
+/** Réponse des mentors de démonstration, qui acceptent automatiquement les demandes. */
+export const REPONSE_AUTOMATIQUE =
+  "Avec plaisir ! Je serai ravi(e) de vous accompagner. Réservez une première séance sur l'un de mes créneaux.";
+
+// Relations de mentorat déjà acceptées pour le profil de démonstration (étape 3 : mise en relation)
+export const demandesInitiales: DemandeMentorat[] = [
+  { id: "d1", interlocuteurId: "m1", jeSuisLeMentor: false, objectif: "Décrocher un stage en développement web", message: "Bonjour, je suis étudiant en informatique à Labé et j'aimerais être accompagné pour trouver mon premier stage.", statut: "acceptee", reponse: REPONSE_AUTOMATIQUE, date: dansJours(-14) },
+  { id: "d2", interlocuteurId: "m3", jeSuisLeMentor: false, objectif: "Lancer mon application pour les agriculteurs", message: "Bonjour, j'ai une idée d'application pour les agriculteurs du Fouta et j'aimerais vos conseils pour me lancer.", statut: "acceptee", reponse: REPONSE_AUTOMATIQUE, date: dansJours(-10) },
+  { id: "d3", interlocuteurId: "m4", jeSuisLeMentor: false, objectif: "Préparer ma candidature Campus France", message: "Bonjour, je souhaite poursuivre un master en France et j'aimerais être guidé dans la construction de mon projet d'études.", statut: "acceptee", reponse: REPONSE_AUTOMATIQUE, date: dansJours(-20) },
 ];

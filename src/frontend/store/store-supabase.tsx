@@ -8,7 +8,8 @@ import { appelApi } from "@/frontend/lib/api";
 import type { ErreursProfil } from "@/shared/validation/profil";
 import { StoreContext, type Store } from "./store-core";
 import { couleurPour, supabase } from "@/frontend/lib/supabase";
-import type { Atelier, Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance } from "@/shared/types";
+import type { Atelier, Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance, StatutDemande } from "@/shared/types";
+import type { ErreursDemande } from "@/shared/validation/demande";
 
 /** Mode Supabase : comptes, base de données partagée et temps réel. */
 
@@ -83,6 +84,16 @@ interface LigneTemoignage {
   mentor_id: string;
   texte: string;
   note: number;
+  created_at: string;
+}
+interface LigneDemande {
+  id: string;
+  mentor_id: string;
+  mentore_id: string;
+  objectif: string;
+  message: string;
+  statut: StatutDemande;
+  reponse: string | null;
   created_at: string;
 }
 interface LigneOpportunite {
@@ -164,6 +175,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   const [ateliersL, setAteliersL] = useState<LigneAtelier[]>([]);
   const [inscriptions, setInscriptions] = useState<LigneInscription[]>([]);
   const [temoignagesL, setTemoignagesL] = useState<LigneTemoignage[]>([]);
+  const [demandesL, setDemandesL] = useState<LigneDemande[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const signaler = useCallback((e: PostgrestError | Error | null) => {
@@ -194,6 +206,11 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   }, [sessionVerifiee, userId, chemin, router]);
 
   // ---------- Chargement des données ----------
+  const rechargerDemandes = useCallback(async () => {
+    const { data, error } = await sb.from("demandes_mentorat").select("*").order("created_at", { ascending: false });
+    if (!signaler(error)) setDemandesL(data as LigneDemande[]);
+  }, [sb, signaler]);
+
   const rechargerSeances = useCallback(async () => {
     const { data, error } = await sb.from("seances").select("*").order("date");
     if (!signaler(error)) setSeancesL(data as LigneSeance[]);
@@ -203,7 +220,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
     if (!userId) return;
     let annule = false;
     (async () => {
-      const [p, tous, s, m, o, opp, fav, at, ins, tem] = await Promise.all([
+      const [p, tous, s, m, o, opp, fav, at, ins, tem, dem] = await Promise.all([
         sb.from("profiles").select("*").eq("user_id", userId).single(),
         sb.from("profiles").select("*").order("created_at"),
         sb.from("seances").select("*").order("date"),
@@ -214,9 +231,11 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
         sb.from("ateliers").select("*").order("date"),
         sb.from("inscriptions_ateliers").select("atelier_id, profil_id"),
         sb.from("temoignages").select("*").order("created_at", { ascending: false }),
+        sb.from("demandes_mentorat").select("*").order("created_at", { ascending: false }),
       ]);
       if (annule) return;
-      for (const r of [p, tous, s, m, o, opp, fav, at, ins, tem]) signaler(r.error);
+      for (const r of [p, tous, s, m, o, opp, fav, at, ins, tem, dem]) signaler(r.error);
+      setDemandesL((dem.data ?? []) as LigneDemande[]);
       setAteliersL((at.data ?? []) as LigneAtelier[]);
       setInscriptions((ins.data ?? []) as LigneInscription[]);
       setTemoignagesL((tem.data ?? []) as LigneTemoignage[]);
@@ -250,6 +269,9 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
           if (data) setProfils(data as LigneProfil[]);
         },
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "demandes_mentorat" }, () => {
+        rechargerDemandes();
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "seances" }, () => {
         rechargerSeances();
       })
@@ -257,7 +279,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
     return () => {
       sb.removeChannel(canal);
     };
-  }, [sb, monId, rechargerSeances]);
+  }, [sb, monId, rechargerSeances, rechargerDemandes]);
 
   // ---------- Vues pour l'application ----------
   const personnes = useMemo(() => profils.map(versMentor), [profils]);
@@ -352,6 +374,19 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
       note: t.note,
       date: t.created_at,
     })),
+    demandes: demandesL.map((d) => {
+      const jeSuisLeMentor = d.mentor_id === monId;
+      return {
+        id: d.id,
+        interlocuteurId: jeSuisLeMentor ? d.mentore_id : d.mentor_id,
+        jeSuisLeMentor,
+        objectif: d.objectif,
+        message: d.message,
+        statut: d.statut,
+        reponse: d.reponse ?? undefined,
+        date: d.created_at,
+      };
+    }),
     tousMentors,
     personnes,
     monIdMentor: moi?.role === "mentor" ? moi.id : null,
@@ -468,6 +503,26 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
         setInscriptions((l) => [...l, { atelier_id: atelierId, profil_id: monId }]);
         signaler((await sb.from("inscriptions_ateliers").insert({ atelier_id: atelierId, profil_id: monId })).error);
       }
+    },
+    envoyerDemande: async (d) => {
+      const rep = await appelApi<{ ligne?: LigneDemande; erreurs?: ErreursDemande }>("/api/demandes", {
+        method: "POST",
+        body: JSON.stringify(d),
+      });
+      if (!rep.ok || !rep.donnees.ligne) return { ok: false, erreurs: rep.donnees.erreurs ?? { formulaire: "Serveur injoignable, réessayez." } };
+      const ligne = rep.donnees.ligne;
+      setDemandesL((l) => [ligne, ...l.filter((x) => x.id !== ligne.id)]);
+      return { ok: true };
+    },
+    repondreDemande: async (id, statut, reponse) => {
+      const rep = await appelApi<{ ligne?: LigneDemande; erreurs?: { formulaire?: string } }>(`/api/demandes/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ statut, reponse }),
+      });
+      if (!rep.ok || !rep.donnees.ligne) return { ok: false, erreur: rep.donnees.erreurs?.formulaire ?? "Serveur injoignable, réessayez." };
+      const ligne = rep.donnees.ligne;
+      setDemandesL((l) => l.map((x) => (x.id === ligne.id ? ligne : x)));
+      return { ok: true };
     },
     publierTemoignage: async (t) => {
       if (!monId || !moi) return;

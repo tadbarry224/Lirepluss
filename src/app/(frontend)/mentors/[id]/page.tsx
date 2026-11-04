@@ -7,6 +7,7 @@ import { domaineNom, domaines, ressources } from "@/shared/data";
 import { noteMoyenne, scoreCompatibilite } from "@/shared/matching";
 import { formatDate, useStore } from "@/frontend/store";
 import type { Seance } from "@/shared/types";
+import { DemandeMentorat } from "@/frontend/components/DemandeMentorat";
 import { Avatar, Badge, Carte, Etoiles, bouton, boutonSecondaire, champ } from "@/frontend/components/ui";
 
 const jours: Record<string, number> = { Dim: 0, Lun: 1, Mar: 2, Mer: 3, Jeu: 4, Ven: 5, Sam: 6 };
@@ -34,7 +35,7 @@ function prochainsCreneaux(dispos: string[], nombre = 6) {
 export default function ProfilMentor() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage, personnes: mentors, pret, monIdMentor } = useStore();
+  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage, personnes: mentors, pret, monIdMentor, demandes } = useStore();
   const mentor = mentors.find((m) => m.id === id);
   const [creneau, setCreneau] = useState<string>("");
   const [sujet, setSujet] = useState("");
@@ -53,6 +54,9 @@ export default function ProfilMentor() {
 
   const estMoi = mentor.id === monIdMentor;
   const peutReserver = mentor.role !== "mentore" && !estMoi;
+  // Étape 3 : la réservation n'est possible qu'une fois la mise en relation acceptée par le mentor
+  const relation = demandes.find((d) => d.interlocuteurId === mentor.id && !d.jeSuisLeMentor);
+  const relationAcceptee = relation?.statut === "acceptee";
   const compat = scoreCompatibilite(profil, mentor, seances);
   const note = noteMoyenne(mentor.id, seances);
   const avis = seances.filter((s) => s.mentorId === mentor.id && s.note);
@@ -98,11 +102,13 @@ export default function ProfilMentor() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Carte>
-          <h2 className="mb-4 text-lg font-semibold">📅 Réserver une séance</h2>
+          <h2 className="mb-4 text-lg font-semibold">{relationAcceptee || !peutReserver ? "📅 Réserver une séance" : "🤝 Demander un mentorat"}</h2>
           {!peutReserver ? (
             <p className="text-sm text-slate-500">
               {estMoi ? "C'est votre fiche publique de mentor : voici ce que voient les mentorés." : "Cette personne n'est pas mentor."}
             </p>
+          ) : !relationAcceptee ? (
+            <DemandeMentorat mentor={mentor} relation={relation} />
           ) : confirme ? (
             <div className="space-y-3 text-center">
               <p className="text-4xl">🎉</p>

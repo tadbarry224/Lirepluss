@@ -60,6 +60,23 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- ---------- Demandes de mentorat : mise en relation (étape 3) ----------
+create table if not exists public.demandes_mentorat (
+  id          uuid primary key default gen_random_uuid(),
+  mentor_id   uuid not null references public.profiles (id) on delete cascade,
+  mentore_id  uuid not null references public.profiles (id) on delete cascade,
+  objectif    text not null check (length(objectif) between 5 and 150),
+  message     text not null check (length(message) between 20 and 1000),
+  statut      text not null default 'en_attente' check (statut in ('en_attente', 'acceptee', 'refusee')),
+  reponse     text check (length(reponse) <= 500),
+  created_at  timestamptz not null default now(),
+  repondu_at  timestamptz,
+  check (mentor_id <> mentore_id)
+);
+-- Une seule relation active (en attente ou acceptée) par binôme mentor / mentoré
+create unique index if not exists demandes_binome_actif on public.demandes_mentorat (mentor_id, mentore_id)
+  where statut in ('en_attente', 'acceptee');
+
 -- ---------- Séances de mentorat ----------
 create table if not exists public.seances (
   id          uuid primary key default gen_random_uuid(),
@@ -171,8 +188,16 @@ drop policy if exists "séances des participants" on public.seances;
 create policy "séances des participants" on public.seances for select to authenticated
   using (public.mon_profil_id() in (mentor_id, mentore_id));
 drop policy if exists "réserver une séance" on public.seances;
+-- On ne peut réserver qu'auprès d'un mentor qui a accepté la mise en relation
 create policy "réserver une séance" on public.seances for insert to authenticated
-  with check (mentore_id = public.mon_profil_id() and mentor_id <> mentore_id);
+  with check (
+    mentore_id = public.mon_profil_id()
+    and mentor_id <> mentore_id
+    and exists (
+      select 1 from public.demandes_mentorat d
+      where d.mentor_id = seances.mentor_id and d.mentore_id = seances.mentore_id and d.statut = 'acceptee'
+    )
+  );
 drop policy if exists "modifier ses séances" on public.seances;
 create policy "modifier ses séances" on public.seances for update to authenticated
   using (public.mon_profil_id() in (mentor_id, mentore_id))
@@ -204,6 +229,12 @@ drop policy if exists "favoris privés" on public.favoris;
 create policy "favoris privés" on public.favoris for all to authenticated
   using (profil_id = public.mon_profil_id())
   with check (profil_id = public.mon_profil_id());
+
+-- Demandes : lisibles par le mentor et le mentoré concernés ; écrites uniquement par le backend
+alter table public.demandes_mentorat enable row level security;
+drop policy if exists "demandes des participants" on public.demandes_mentorat;
+create policy "demandes des participants" on public.demandes_mentorat for select to authenticated
+  using (public.mon_profil_id() in (mentor_id, mentore_id));
 
 alter table public.ateliers              enable row level security;
 alter table public.inscriptions_ateliers enable row level security;
@@ -252,5 +283,10 @@ end $$;
 do $$
 begin
   alter publication supabase_realtime add table public.seances;
+exception when duplicate_object then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.demandes_mentorat;
 exception when duplicate_object then null;
 end $$;

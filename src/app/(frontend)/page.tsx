@@ -9,7 +9,8 @@ import { formatDate, progression, useStore } from "@/frontend/store";
 import { Avatar, Barre, Carte, CarteMentor, bouton, boutonSecondaire } from "@/frontend/components/ui";
 
 export default function TableauDeBord() {
-  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes, mode, ateliers, mesAteliers } = useStore();
+  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes, mode, ateliers, mesAteliers, demandes } = useStore();
+  const demandesRecues = demandes.filter((d) => d.jeSuisLeMentor && d.statut === "en_attente").length;
   const router = useRouter();
   const aVenir = seances
     .filter((s) => s.statut === "planifiee" && new Date(s.date) >= new Date())
@@ -64,6 +65,15 @@ export default function TableauDeBord() {
             <p className="text-sm text-slate-600 dark:text-slate-400">4 questions pour vous proposer les mentors et ateliers les plus adaptés.</p>
           </div>
           <Link href="/bienvenue" className={bouton}>Commencer</Link>
+        </Carte>
+      )}
+
+      {demandesRecues > 0 && (
+        <Carte className="flex flex-wrap items-center justify-between gap-3 border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+          <p className="text-sm">
+            🤝 <strong>{demandesRecues} demande{demandesRecues > 1 ? "s" : ""} de mentorat</strong> attend{demandesRecues > 1 ? "ent" : ""} votre réponse.
+          </p>
+          <Link href="/demandes" className={bouton}>Répondre</Link>
         </Carte>
       )}
 

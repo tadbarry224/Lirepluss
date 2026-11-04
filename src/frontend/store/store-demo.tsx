@@ -3,18 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ateliersInitiaux,
+  demandesInitiales,
   mentors as mentorsDemo,
   messagesInitiaux,
   objectifsInitiaux,
   opportunitesInitiales,
   profilInitial,
+  REPONSE_AUTOMATIQUE,
   seancesInitiales,
   temoignagesInitiaux,
 } from "@/shared/data";
 import { appelApi } from "@/frontend/lib/api";
 import type { ErreursProfil } from "@/shared/validation/profil";
 import { StoreContext, uid, type Store } from "./store-core";
-import type { Mentor, Message, Objectif, Opportunite, Profil, Seance, Temoignage } from "@/shared/types";
+import type { DemandeMentorat, Mentor, Message, Objectif, Opportunite, Profil, Seance, Temoignage } from "@/shared/types";
+import type { ErreursDemande } from "@/shared/validation/demande";
 
 /** Mode démo : toutes les données restent dans le navigateur (localStorage). */
 
@@ -28,6 +31,7 @@ interface Etat {
   mentorsInscrits: Mentor[];
   mesAteliers: string[];
   temoignagesPublies: Temoignage[];
+  demandes: DemandeMentorat[];
 }
 
 const etatInitial: Etat = {
@@ -40,6 +44,7 @@ const etatInitial: Etat = {
   mentorsInscrits: [],
   mesAteliers: [],
   temoignagesPublies: [],
+  demandes: demandesInitiales,
 };
 
 const CLE = "lireplus:etat:v2";
@@ -165,6 +170,38 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       maj((e) => ({
         mesAteliers: e.mesAteliers.includes(id) ? e.mesAteliers.filter((x) => x !== id) : [...e.mesAteliers, id],
       })),
+    envoyerDemande: async (d) => {
+      const rep = await appelApi<{ demande?: unknown; erreurs?: ErreursDemande }>("/api/demandes", {
+        method: "POST",
+        body: JSON.stringify(d),
+      });
+      if (!rep.ok) return { ok: false, erreurs: rep.donnees.erreurs ?? { formulaire: "Serveur injoignable, réessayez." } };
+      if (etat.demandes.some((x) => x.interlocuteurId === d.mentorId && x.statut !== "refusee")) {
+        return { ok: false, erreurs: { formulaire: "Une demande est déjà en cours avec ce mentor" } };
+      }
+      const id = uid();
+      maj((e) => ({
+        demandes: [
+          { id, interlocuteurId: d.mentorId, jeSuisLeMentor: false, objectif: d.objectif.trim(), message: d.message.trim(), statut: "en_attente", date: new Date().toISOString() },
+          ...e.demandes,
+        ],
+      }));
+      // Les mentors de démonstration acceptent automatiquement après quelques secondes
+      setTimeout(
+        () => maj((e) => ({ demandes: e.demandes.map((x) => (x.id === id ? { ...x, statut: "acceptee", reponse: REPONSE_AUTOMATIQUE } : x)) })),
+        2500,
+      );
+      return { ok: true };
+    },
+    repondreDemande: async (id, statut, reponse) => {
+      const rep = await appelApi<{ erreurs?: { formulaire?: string } }>(`/api/demandes/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ statut, reponse }),
+      });
+      if (!rep.ok) return { ok: false, erreur: rep.donnees.erreurs?.formulaire ?? "Serveur injoignable, réessayez." };
+      maj((e) => ({ demandes: e.demandes.map((x) => (x.id === id ? { ...x, statut, reponse: reponse.trim() || undefined } : x)) }));
+      return { ok: true };
+    },
     publierTemoignage: (t) =>
       maj((e) => ({
         temoignagesPublies: [

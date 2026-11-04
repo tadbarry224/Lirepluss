@@ -156,3 +156,18 @@ export interface Temoignage {
   note: number;
   date: string;
 }
+
+export type StatutDemande = "en_attente" | "acceptee" | "refusee";
+
+/** Demande de mentorat : étape 3 du programme (TDR §10), mise en relation entre mentors et participants. */
+export interface DemandeMentorat {
+  id: string;
+  /** L'autre personne : le mentor pour un mentoré, le mentoré pour un mentor */
+  interlocuteurId: string;
+  jeSuisLeMentor: boolean;
+  objectif: string;
+  message: string;
+  statut: StatutDemande;
+  reponse?: string;
+  date: string;
+}

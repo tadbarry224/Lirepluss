@@ -9,6 +9,7 @@ import { useStore } from "@/frontend/store";
 const liens = [
   { href: "/", label: "Tableau de bord", icone: "🏠" },
   { href: "/mentors", label: "Trouver un mentor", icone: "🔎" },
+  { href: "/demandes", label: "Mises en relation", icone: "🤝" },
   { href: "/domaines", label: "Domaines", icone: "🗂️" },
   { href: "/seances", label: "Séances", icone: "📅" },
   { href: "/ateliers", label: "Ateliers", icone: "👥" },
@@ -23,7 +24,8 @@ const liens = [
 export function Navigation() {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
-  const { profil, mode, email, deconnexion } = useStore();
+  const { profil, mode, email, deconnexion, demandes } = useStore();
+  const demandesEnAttente = demandes.filter((d) => d.jeSuisLeMentor && d.statut === "en_attente").length;
 
   if (chemin === "/connexion") return null;
 
@@ -53,6 +55,9 @@ export function Navigation() {
             >
               <span aria-hidden>{l.icone}</span>
               {l.label}
+              {l.href === "/demandes" && demandesEnAttente > 0 && (
+                <span className="ml-auto rounded-full bg-amber-500 px-2 text-xs font-bold text-white">{demandesEnAttente}</span>
+              )}
             </Link>
           ))}
         </nav>

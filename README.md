@@ -14,7 +14,8 @@ Plateforme web de mise en relation entre mentors et mentorés, développée pour
 | Tableau de bord | `/` | Statistiques, mentors recommandés, prochaines séances, objectifs, opportunités |
 | Profils | `/profil` | Profil mentoré (étudiant, jeune diplômé, entrepreneur, porteur de projet, reconversion…) ou **inscription comme mentor** (le mentor apparaît dans la recherche) |
 | Recherche & mise en relation | `/mentors` | Filtres (texte, domaine, ville) + **recommandation par IA** (Claude) avec repli sur un algorithme local |
-| Profil mentor | `/mentors/[id]` | Bio, compatibilité, avis, ressources, **réservation** en visio, chat ou présentiel |
+| Mise en relation | `/demandes` | **Demande de mentorat** (objectif + message) envoyée par le mentoré, **acceptée ou déclinée** par le mentor (étape 3) ; en temps réel |
+| Profil mentor | `/mentors/[id]` | Bio, compatibilité, avis, ressources, demande de mentorat puis **réservation** (visio, chat ou présentiel) une fois la relation acceptée |
 | Catalogue des domaines | `/domaines` | Les 7 domaines d'intervention des TDR et leurs sous-domaines, dont Culture/littérature et Campus France |
 | Séances | `/seances` | Planification, suivi, annulation, **évaluation**, **plan d'action** transformé en objectif (« mettre en pratique les conseils reçus ») |
 | Visio | `/seances/[id]/visio` | **Salle de visioconférence** intégrée (Jitsi Meet) avec chat de séance |
@@ -85,6 +86,7 @@ src/
 │  └─ api/                      Points d'entrée du backend (HTTP)
 │     ├─ profil/route.ts        PUT : valider et enregistrer le profil
 │     ├─ profil/photo/route.ts  POST : vérifier et enregistrer la photo
+│     ├─ demandes/              POST : demande de mentorat · [id] PATCH : réponse du mentor
 │     ├─ recommandation/        POST : mentors recommandés par l'IA
 │     └─ parcours/              POST : parcours personnalisé par l'IA
 │
