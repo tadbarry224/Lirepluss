@@ -60,17 +60,24 @@ git push
 
 ## Répartition des fichiers
 
-Pour limiter les conflits, chacun travaille de préférence sur des pages différentes :
+Le code est organisé en **frontend**, **backend** et **shared** (voir la section « Structure » du README).
+Pour limiter les conflits, répartissez-vous ainsi :
 
-| Zone | Fichiers |
-|---|---|
-| Recherche et mentors | `src/app/mentors/` |
-| Séances et évaluations | `src/app/seances/` |
-| Messagerie | `src/app/messages/` |
-| Objectifs | `src/app/objectifs/` |
-| Ressources et opportunités | `src/app/ressources/`, `src/app/opportunites/` |
-| IA | `src/app/api/recommandation/`, `src/lib/matching.ts` |
-| Fichiers partagés (prévenir l'équipe avant de modifier) | `src/lib/types.ts`, `src/lib/store.tsx`, `src/lib/data.ts`, `src/components/` |
+| Rôle | Zone | Fichiers |
+|---|---|---|
+| Frontend | Profil et accueil | `src/app/(frontend)/profil/`, `src/app/(frontend)/bienvenue/`, `src/frontend/components/ChampPhoto.tsx` |
+| Frontend | Recherche et mentors | `src/app/(frontend)/mentors/` |
+| Frontend | Séances, visio, évaluations | `src/app/(frontend)/seances/` |
+| Frontend | Ateliers, témoignages | `src/app/(frontend)/ateliers/`, `src/app/(frontend)/temoignages/` |
+| Frontend | Messagerie, objectifs, ressources, opportunités | `src/app/(frontend)/messages/`, `objectifs/`, `ressources/`, `opportunites/` |
+| Backend | API et services | `src/app/api/`, `src/backend/` |
+| Backend | Base de données | `supabase/schema.sql`, `scripts/generer-seed.mjs` |
+| Tous (prévenir l'équipe avant de modifier) | Code partagé | `src/shared/`, `src/frontend/store/`, `src/frontend/components/ui.tsx` |
+
+**Règles :**
+- Une page ne parle jamais directement à la base de données : elle passe par le store (`useStore()`), qui appelle l'API ou Supabase.
+- Tout ce qui utilise une clé secrète va dans `src/backend/` (le paquet `server-only` empêche son import côté navigateur).
+- Une règle de validation se modifie dans `src/shared/validation/` : elle s'applique alors au frontend et au backend.
 
 ## À ne jamais commiter
 

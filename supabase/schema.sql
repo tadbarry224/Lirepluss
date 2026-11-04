@@ -25,6 +25,12 @@ create table if not exists public.profiles (
   created_at     timestamptz not null default now()
 );
 
+-- Questionnaire d'accueil (étape 1) et charte du mentor (§9)
+alter table public.profiles add column if not exists attentes text[] not null default '{}';
+alter table public.profiles add column if not exists format_prefere text;
+alter table public.profiles add column if not exists charte_acceptee boolean not null default false;
+alter table public.profiles add column if not exists photo_url text;
+
 -- Identifiant du profil de l'utilisateur connecté
 create or replace function public.mon_profil_id()
 returns uuid
@@ -111,6 +117,39 @@ create table if not exists public.favoris (
   primary key (profil_id, mentor_id)
 );
 
+-- ---------- Ateliers thématiques (étape 4) ----------
+create table if not exists public.ateliers (
+  id            uuid primary key default gen_random_uuid(),
+  titre         text not null,
+  domaine       text not null,
+  animateur_id  uuid not null references public.profiles (id) on delete cascade,
+  date          timestamptz not null,
+  duree_minutes int not null default 60,
+  format        text not null default 'Visio' check (format in ('Visio', 'Présentiel')),
+  lieu          text not null default 'En ligne',
+  places        int not null default 30,
+  description   text not null default '',
+  created_at    timestamptz not null default now()
+);
+
+create table if not exists public.inscriptions_ateliers (
+  atelier_id uuid not null references public.ateliers (id) on delete cascade,
+  profil_id  uuid not null references public.profiles (id) on delete cascade,
+  primary key (atelier_id, profil_id)
+);
+
+-- ---------- Témoignages (étape 7 : restitution des expériences) ----------
+create table if not exists public.temoignages (
+  id            uuid primary key default gen_random_uuid(),
+  auteur_id     uuid references public.profiles (id) on delete cascade,
+  auteur_nom    text not null,
+  auteur_niveau text not null default '',
+  mentor_id     uuid not null references public.profiles (id) on delete cascade,
+  texte         text not null check (length(texte) between 10 and 1000),
+  note          int not null check (note between 1 and 5),
+  created_at    timestamptz not null default now()
+);
+
 -- =====================================================================
 -- Sécurité : Row Level Security (chacun n'accède qu'à ce qui le concerne)
 -- =====================================================================
@@ -121,12 +160,11 @@ alter table public.objectifs    enable row level security;
 alter table public.opportunites enable row level security;
 alter table public.favoris      enable row level security;
 
--- Profils : visibles par tous les utilisateurs connectés, modifiables par leur propriétaire
+-- Profils : visibles par tous les utilisateurs connectés.
+-- Aucune règle d'écriture : seul le backend (/api/profil, clé secrète) modifie les profils, après validation.
 drop policy if exists "profils lisibles" on public.profiles;
 create policy "profils lisibles" on public.profiles for select to authenticated using (true);
 drop policy if exists "profil modifiable par son propriétaire" on public.profiles;
-create policy "profil modifiable par son propriétaire" on public.profiles for update to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Séances : visibles et modifiables par le mentor et le mentoré concernés
 drop policy if exists "séances des participants" on public.seances;
@@ -166,6 +204,42 @@ drop policy if exists "favoris privés" on public.favoris;
 create policy "favoris privés" on public.favoris for all to authenticated
   using (profil_id = public.mon_profil_id())
   with check (profil_id = public.mon_profil_id());
+
+alter table public.ateliers              enable row level security;
+alter table public.inscriptions_ateliers enable row level security;
+alter table public.temoignages           enable row level security;
+
+-- Ateliers : visibles par tous, créés par leur animateur (un mentor)
+drop policy if exists "ateliers lisibles" on public.ateliers;
+create policy "ateliers lisibles" on public.ateliers for select to authenticated using (true);
+drop policy if exists "animer un atelier" on public.ateliers;
+create policy "animer un atelier" on public.ateliers for insert to authenticated
+  with check (animateur_id = public.mon_profil_id());
+
+-- Inscriptions : visibles par tous (nombre de places), gérées par l'inscrit
+drop policy if exists "inscriptions lisibles" on public.inscriptions_ateliers;
+create policy "inscriptions lisibles" on public.inscriptions_ateliers for select to authenticated using (true);
+drop policy if exists "s'inscrire" on public.inscriptions_ateliers;
+create policy "s'inscrire" on public.inscriptions_ateliers for insert to authenticated
+  with check (profil_id = public.mon_profil_id());
+drop policy if exists "se désinscrire" on public.inscriptions_ateliers;
+create policy "se désinscrire" on public.inscriptions_ateliers for delete to authenticated
+  using (profil_id = public.mon_profil_id());
+
+-- Témoignages : publics, publiés en son propre nom
+drop policy if exists "témoignages lisibles" on public.temoignages;
+create policy "témoignages lisibles" on public.temoignages for select to authenticated using (true);
+drop policy if exists "publier un témoignage" on public.temoignages;
+create policy "publier un témoignage" on public.temoignages for insert to authenticated
+  with check (auteur_id = public.mon_profil_id());
+
+-- =====================================================================
+-- Photos de profil : stockage public en lecture, écrit uniquement par le backend
+-- =====================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 -- =====================================================================
 -- Temps réel : messages et séances
