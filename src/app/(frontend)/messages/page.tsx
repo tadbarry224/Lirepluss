@@ -30,7 +30,9 @@ function Messagerie() {
   const fil = messages.filter((m) => m.mentorId === actif);
   const mentor = mentors.find((m) => m.id === actif);
 
-  useEffect(() => fin.current?.scrollIntoView({ behavior: "smooth" }), [fil.length]);
+  useEffect(() => {
+    fin.current?.scrollIntoView({ behavior: "smooth" });
+  }, [fil.length]);
 
   if (!mentor) {
     return (
