@@ -8,6 +8,7 @@ Plateforme web de mise en relation entre mentors et mentorés, développée pour
 
 | Module | Page | Description |
 |---|---|---|
+| Connexion | `/connexion` | Connexion, inscription (mentor ou mentoré), mot de passe oublié avec lien par email (`/reinitialiser-mot-de-passe`) ; mot de passe solide, erreurs traduites |
 | Identification des besoins | `/bienvenue` | Questionnaire d'accueil en 4 étapes (étape 1 du programme) : profil, domaines, attentes rattachées aux axes, format préféré ; charte d'engagement pour les mentors |
 | Ateliers thématiques | `/ateliers` | Ateliers collectifs animés par les mentors (étape 4) : inscription, places restantes, visio de groupe |
 | Témoignages | `/temoignages` | Restitution des expériences de mentorat (étape 7), publiées après les séances |
@@ -48,7 +49,9 @@ Le mode démo reste un filet de sécurité pour la présentation au jury.
    NEXT_PUBLIC_SUPABASE_KEY=sb_publishable_...
    SUPABASE_SECRET_KEY=sb_secret_...      (serveur uniquement : ne jamais la partager)
    ```
-6. Relancer `pnpm dev`.
+6. **Authentication → URL Configuration** : *Site URL* = `http://localhost:3000` et ajouter `http://localhost:3000/**` dans *Redirect URLs*
+   (ainsi que l'adresse du site une fois en ligne). Indispensable pour le lien « Mot de passe oublié ».
+7. Relancer `pnpm dev`.
 
 Pour tester l'interaction : créer un compte **mentor** dans un navigateur et un compte **mentoré** dans une fenêtre de
 navigation privée (ou sur un téléphone), puis réserver une séance et échanger des messages.

@@ -62,4 +62,7 @@ export type ResultatEnregistrement = { ok: true } | { ok: false; erreurs: Erreur
 
 export const StoreContext = createContext<Store | null>(null);
 
+/** Pages accessibles sans être connecté (mode Supabase) et affichées sans le menu. */
+export const PAGES_PUBLIQUES = ["/connexion", "/reinitialiser-mot-de-passe"];
+
 export const uid = () => Math.random().toString(36).slice(2, 10);

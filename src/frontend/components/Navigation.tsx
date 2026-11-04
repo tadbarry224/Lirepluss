@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { APP_NAME } from "@/shared/data";
 import { useStore } from "@/frontend/store";
+import { PAGES_PUBLIQUES } from "@/frontend/store/store-core";
 
 const liens = [
   { href: "/", label: "Tableau de bord", icone: "🏠" },
@@ -27,7 +28,7 @@ export function Navigation() {
   const { profil, mode, email, deconnexion, demandes } = useStore();
   const demandesEnAttente = demandes.filter((d) => d.jeSuisLeMentor && d.statut === "en_attente").length;
 
-  if (chemin === "/connexion") return null;
+  if (PAGES_PUBLIQUES.includes(chemin)) return null;
 
   const actif = (href: string) => (href === "/" ? chemin === "/" : chemin.startsWith(href));
 

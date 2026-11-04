@@ -6,12 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { profilInitial } from "@/shared/data";
 import { appelApi } from "@/frontend/lib/api";
 import type { ErreursProfil } from "@/shared/validation/profil";
-import { StoreContext, type Store } from "./store-core";
+import { PAGES_PUBLIQUES, StoreContext, type Store } from "./store-core";
 import { couleurPour, supabase } from "@/frontend/lib/supabase";
 import type { Atelier, Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance, StatutDemande } from "@/shared/types";
 import type { ErreursDemande } from "@/shared/validation/demande";
 
 /** Mode Supabase : comptes, base de données partagée et temps réel. */
+
 
 // ---------- Lignes de la base (voir supabase/schema.sql) ----------
 interface LigneProfil {
@@ -201,7 +202,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   // Redirection vers la page de connexion si nécessaire
   useEffect(() => {
     if (!sessionVerifiee) return;
-    if (!userId && chemin !== "/connexion") router.replace("/connexion");
+    if (!userId && !PAGES_PUBLIQUES.includes(chemin)) router.replace("/connexion");
     if (userId && chemin === "/connexion") router.replace("/");
   }, [sessionVerifiee, userId, chemin, router]);
 
@@ -547,7 +548,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   };
 
   // Tant que l'utilisateur n'est pas connecté, seule la page de connexion est affichée.
-  const afficher = chemin === "/connexion" || (userId && store.pret);
+  const afficher = PAGES_PUBLIQUES.includes(chemin) || (userId && store.pret);
 
   return (
     <StoreContext.Provider value={store}>
