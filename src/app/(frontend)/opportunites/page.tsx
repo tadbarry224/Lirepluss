@@ -4,32 +4,59 @@ import { useState } from "react";
 import { domaineNom, domaines } from "@/shared/data";
 import { formatDate, useStore } from "@/frontend/store";
 import type { Opportunite } from "@/shared/types";
-import { Badge, Carte, Titre, bouton, boutonSecondaire, champ } from "@/frontend/components/ui";
+import { Badge, Carte, ErreurChamp, Titre, aujourdhui, bouton, boutonSecondaire, champ } from "@/frontend/components/ui";
 
 const types: Opportunite["type"][] = ["Stage", "Emploi", "Bourse", "Concours", "Financement", "Formation"];
 
 function Publier({ fermer }: { fermer: () => void }) {
   const { publierOpportunite, profil } = useStore();
-  const [f, setF] = useState({ titre: "", type: "Stage" as Opportunite["type"], organisation: "", lieu: "", dateLimite: "", domaine: "dev", description: "" });
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+  const [f, setF] = useState({ titre: "", type: "Stage" as Opportunite["type"], organisation: "", lieu: "", dateLimite: "", domaine: domaines[0].id, description: "" });
+  const [erreurs, setErreurs] = useState<Partial<Record<keyof typeof f, string>>>({});
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setF({ ...f, [k]: e.target.value });
+    setErreurs((x) => ({ ...x, [k]: undefined }));
+  };
 
   function valider(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.titre || !f.organisation || !f.dateLimite) return;
-    publierOpportunite({ ...f, publiePar: profil.nom });
+    const trouvees = {
+      titre: f.titre.trim().length < 3 ? "Indiquez l'intitulé (3 caractères minimum)" : undefined,
+      organisation: f.organisation.trim().length < 2 ? "Indiquez l'organisation" : undefined,
+      dateLimite: !f.dateLimite ? "Choisissez la date limite" : f.dateLimite < aujourdhui() ? "La date limite est déjà passée" : undefined,
+    };
+    setErreurs(trouvees);
+    if (Object.values(trouvees).some(Boolean)) return;
+    publierOpportunite({ ...f, titre: f.titre.trim(), organisation: f.organisation.trim(), lieu: f.lieu.trim(), description: f.description.trim(), publiePar: profil.nom });
     fermer();
   }
 
   return (
     <Carte className="mb-6">
-      <form onSubmit={valider} className="grid gap-3 sm:grid-cols-2">
-        <input value={f.titre} onChange={set("titre")} placeholder="Intitulé" className={`${champ} sm:col-span-2`} />
-        <select value={f.type} onChange={set("type")} className={champ}>{types.map((t) => <option key={t}>{t}</option>)}</select>
-        <select value={f.domaine} onChange={set("domaine")} className={champ}>{domaines.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>
-        <input value={f.organisation} onChange={set("organisation")} placeholder="Organisation" className={champ} />
-        <input value={f.lieu} onChange={set("lieu")} placeholder="Lieu" className={champ} />
-        <label className="text-sm sm:col-span-2">Date limite <input type="date" value={f.dateLimite} onChange={set("dateLimite")} className={`${champ} mt-1`} /></label>
-        <textarea value={f.description} onChange={set("description")} rows={3} placeholder="Description" className={`${champ} sm:col-span-2`} />
+      <form onSubmit={valider} noValidate className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-medium sm:col-span-2">Intitulé
+          <input value={f.titre} onChange={set("titre")} placeholder="Ex : Stage développeur web (6 mois)" aria-invalid={Boolean(erreurs.titre)} className={`${champ} mt-1 font-normal`} />
+          <ErreurChamp message={erreurs.titre} />
+        </label>
+        <label className="text-sm font-medium">Type
+          <select value={f.type} onChange={set("type")} className={`${champ} mt-1 font-normal`}>{types.map((t) => <option key={t}>{t}</option>)}</select>
+        </label>
+        <label className="text-sm font-medium">Domaine
+          <select value={f.domaine} onChange={set("domaine")} className={`${champ} mt-1 font-normal`}>{domaines.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}</select>
+        </label>
+        <label className="text-sm font-medium">Organisation
+          <input value={f.organisation} onChange={set("organisation")} aria-invalid={Boolean(erreurs.organisation)} className={`${champ} mt-1 font-normal`} />
+          <ErreurChamp message={erreurs.organisation} />
+        </label>
+        <label className="text-sm font-medium">Lieu <span className="font-normal text-slate-500">(optionnel)</span>
+          <input value={f.lieu} onChange={set("lieu")} placeholder="Ex : Conakry, en ligne…" className={`${champ} mt-1 font-normal`} />
+        </label>
+        <label className="text-sm font-medium sm:col-span-2">Date limite
+          <input type="date" value={f.dateLimite} min={aujourdhui()} onChange={set("dateLimite")} aria-invalid={Boolean(erreurs.dateLimite)} className={`${champ} mt-1 font-normal`} />
+          <ErreurChamp message={erreurs.dateLimite} />
+        </label>
+        <label className="text-sm font-medium sm:col-span-2">Description <span className="font-normal text-slate-500">(optionnel)</span>
+          <textarea value={f.description} onChange={set("description")} rows={3} className={`${champ} mt-1 font-normal`} />
+        </label>
         <div className="flex gap-2 sm:col-span-2">
           <button className={bouton}>Publier</button>
           <button type="button" onClick={fermer} className={boutonSecondaire}>Annuler</button>

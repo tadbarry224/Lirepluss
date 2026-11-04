@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { formatDate, progression, uid, useStore } from "@/frontend/store";
-import { Barre, Carte, Titre, bouton, boutonSecondaire, champ } from "@/frontend/components/ui";
+import { Barre, Carte, ErreurChamp, Titre, aujourdhui, bouton, boutonSecondaire, champ } from "@/frontend/components/ui";
 import { GenerateurParcours } from "@/frontend/components/GenerateurParcours";
 
 function NouvelObjectif({ fermer }: { fermer: () => void }) {
@@ -12,10 +12,16 @@ function NouvelObjectif({ fermer }: { fermer: () => void }) {
   const [echeance, setEcheance] = useState("");
   const [mentorId, setMentorId] = useState("");
   const [etapes, setEtapes] = useState("");
+  const [erreurs, setErreurs] = useState<{ titre?: string; echeance?: string }>({});
 
   function valider(e: React.FormEvent) {
     e.preventDefault();
-    if (!titre.trim() || !echeance) return;
+    const trouvees = {
+      titre: titre.trim().length < 3 ? "Décrivez votre objectif (3 caractères minimum)" : undefined,
+      echeance: !echeance ? "Choisissez une échéance" : echeance < aujourdhui() ? "L'échéance doit être aujourd'hui ou plus tard" : undefined,
+    };
+    setErreurs(trouvees);
+    if (trouvees.titre || trouvees.echeance) return;
     ajouterObjectif({
       titre,
       echeance: new Date(echeance).toISOString(),
@@ -27,13 +33,21 @@ function NouvelObjectif({ fermer }: { fermer: () => void }) {
 
   return (
     <Carte className="mb-6">
-      <form onSubmit={valider} className="grid gap-3 sm:grid-cols-2">
-        <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Objectif (ex : obtenir une bourse de master)" className={`${champ} sm:col-span-2`} />
-        <input type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} className={champ} />
-        <select value={mentorId} onChange={(e) => setMentorId(e.target.value)} className={champ}>
-          <option value="">Mentor associé (optionnel)</option>
-          {mentors.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
-        </select>
+      <form onSubmit={valider} noValidate className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-medium sm:col-span-2">Objectif
+          <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex : obtenir une bourse de master" aria-invalid={Boolean(erreurs.titre)} className={`${champ} mt-1 font-normal`} />
+          <ErreurChamp message={erreurs.titre} />
+        </label>
+        <label className="text-sm font-medium">Échéance
+          <input type="date" value={echeance} min={aujourdhui()} onChange={(e) => setEcheance(e.target.value)} aria-invalid={Boolean(erreurs.echeance)} className={`${champ} mt-1 font-normal`} />
+          <ErreurChamp message={erreurs.echeance} />
+        </label>
+        <label className="text-sm font-medium">Mentor associé <span className="font-normal text-slate-500">(optionnel)</span>
+          <select value={mentorId} onChange={(e) => setMentorId(e.target.value)} className={`${champ} mt-1 font-normal`}>
+            <option value="">Aucun</option>
+            {mentors.map((m) => <option key={m.id} value={m.id}>{m.nom}</option>)}
+          </select>
+        </label>
         <textarea value={etapes} onChange={(e) => setEtapes(e.target.value)} rows={3} placeholder={"Étapes, une par ligne\nEx : Rédiger ma lettre de motivation"} className={`${champ} sm:col-span-2`} />
         <div className="flex gap-2 sm:col-span-2">
           <button className={bouton}>Créer l&apos;objectif</button>

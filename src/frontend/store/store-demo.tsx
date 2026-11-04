@@ -155,15 +155,17 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [donnees]);
 
-  // Sans session, seules les pages publiques sont accessibles ; une fois connecté, la page de connexion renvoie à l'application.
+  const compte = session?.type === "compte" ? trouverCompte(session.compteId) : null;
+  const pret = Boolean(session) && donnees.cle === (session ? cleDonnees(session) : null);
+  const profilACompleter = etat.profil.domaines.length === 0;
+
+  // Sans session, seules les pages publiques sont accessibles. Une fois connecté (données chargées), la page de connexion
+  // renvoie au questionnaire d'accueil pour un nouveau compte (étape 1), sinon à la page demandée.
   useEffect(() => {
     if (session === undefined) return;
     if (!session && !PAGES_PUBLIQUES.includes(chemin)) router.replace(versConnexion(chemin));
-    if (session && chemin === "/connexion") router.replace(cheminApresConnexion());
-  }, [session, chemin, router]);
-
-  const compte = session?.type === "compte" ? trouverCompte(session.compteId) : null;
-  const pret = Boolean(session) && donnees.cle === (session ? cleDonnees(session) : null);
+    if (session && pret && chemin === "/connexion") router.replace(profilACompleter ? "/bienvenue" : cheminApresConnexion());
+  }, [session, pret, profilACompleter, chemin, router]);
 
   const maj = useCallback(
     (f: (e: Etat) => Partial<Etat>) => setDonnees((d) => ({ ...d, etat: { ...d.etat, ...f(d.etat) } })),

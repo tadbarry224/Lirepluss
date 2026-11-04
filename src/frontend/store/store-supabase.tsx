@@ -199,12 +199,15 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
 
   const userId = session?.user.id ?? null;
 
-  // Redirection vers la page de connexion si nécessaire
+  // Redirection vers la page de connexion si nécessaire. Une fois connecté (profil chargé), un nouveau compte commence par
+  // le questionnaire d'accueil (étape 1), sinon on revient à la page demandée.
+  const profilCharge = moi !== null;
+  const profilACompleter = moi !== null && moi.domaines.length === 0;
   useEffect(() => {
     if (!sessionVerifiee) return;
     if (!userId && !PAGES_PUBLIQUES.includes(chemin)) router.replace(versConnexion(chemin));
-    if (userId && chemin === "/connexion") router.replace(cheminApresConnexion());
-  }, [sessionVerifiee, userId, chemin, router]);
+    if (userId && profilCharge && chemin === "/connexion") router.replace(profilACompleter ? "/bienvenue" : cheminApresConnexion());
+  }, [sessionVerifiee, userId, profilCharge, profilACompleter, chemin, router]);
 
   // ---------- Chargement des données ----------
   const rechargerDemandes = useCallback(async () => {

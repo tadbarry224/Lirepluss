@@ -93,6 +93,12 @@ export function CarteMentor({ mentor, extra, note }: { mentor: Mentor; extra?: R
   );
 }
 
+/** Date du jour au format des champs date (AAAA-MM-JJ), selon l'heure locale. */
+export function aujourdhui() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** Message d'erreur sous un champ de formulaire. */
 export function ErreurChamp({ message }: { message?: string }) {
   if (!message) return null;
