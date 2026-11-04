@@ -21,7 +21,9 @@ const liens = [
 export function Navigation() {
   const chemin = usePathname();
   const [ouvert, setOuvert] = useState(false);
-  const { profil } = useStore();
+  const { profil, mode, email, deconnexion } = useStore();
+
+  if (chemin === "/connexion") return null;
 
   const actif = (href: string) => (href === "/" ? chemin === "/" : chemin.startsWith(href));
 
@@ -53,8 +55,16 @@ export function Navigation() {
           ))}
         </nav>
         <div className="absolute inset-x-4 bottom-4 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
-          <p className="font-semibold">{profil.nom}</p>
+          <p className="truncate font-semibold">{profil.nom}</p>
           <p className="text-xs text-slate-500">{profil.role === "mentor" ? "Mentor" : "Mentoré"} · {profil.niveau}</p>
+          {mode === "supabase" ? (
+            <>
+              <p className="mt-1 truncate text-xs text-slate-500">{email}</p>
+              <button onClick={deconnexion} className="mt-2 text-xs font-medium text-rose-600 hover:underline">Se déconnecter</button>
+            </>
+          ) : (
+            <p className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">MODE DÉMO</p>
+          )}
         </div>
       </aside>
       {ouvert && <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setOuvert(false)} />}

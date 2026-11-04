@@ -24,6 +24,8 @@ export interface Mentor {
   couleur: string;
   /** true pour un mentor inscrit via la plateforme (et non une donnée de démo) */
   inscrit?: boolean;
+  /** Rôle de la personne (les mentorés apparaissent aussi, côté mentor, dans les séances et messages) */
+  role?: Role;
 }
 
 export const profilsBeneficiaires = [
@@ -58,7 +60,10 @@ export type StatutSeance = "planifiee" | "terminee" | "annulee";
 
 export interface Seance {
   id: string;
+  /** L'autre participant de la séance (le mentor pour un mentoré, le mentoré pour un mentor) */
   mentorId: string;
+  /** true si l'utilisateur connecté est le mentor de cette séance */
+  jeSuisLeMentor?: boolean;
   date: string; // ISO
   sujet: string;
   format: "Visio" | "Chat" | "Présentiel";
@@ -69,6 +74,7 @@ export interface Seance {
 
 export interface Message {
   id: string;
+  /** L'interlocuteur de la conversation */
   mentorId: string;
   auteur: "moi" | "mentor";
   texte: string;

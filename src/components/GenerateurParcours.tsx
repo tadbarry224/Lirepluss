@@ -20,7 +20,7 @@ export function GenerateurParcours() {
       const rep = await fetch("/api/parcours", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profil, objectif }),
+        body: JSON.stringify({ profil, objectif, mentors: tousMentors }),
       });
       if (!rep.ok) throw new Error();
       setParcours(((await rep.json()) as { parcours: ParcoursPropose }).parcours);

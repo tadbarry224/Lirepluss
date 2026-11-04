@@ -7,12 +7,12 @@ import { formatDate, progression, useStore } from "@/lib/store";
 import { Avatar, Barre, Carte, CarteMentor, bouton, boutonSecondaire } from "@/components/ui";
 
 export default function TableauDeBord() {
-  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors } = useStore();
+  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes } = useStore();
   const aVenir = seances
     .filter((s) => s.statut === "planifiee" && new Date(s.date) >= new Date())
     .sort((a, b) => a.date.localeCompare(b.date));
   const terminees = seances.filter((s) => s.statut === "terminee");
-  const aEvaluer = terminees.filter((s) => !s.note);
+  const aEvaluer = terminees.filter((s) => !s.note && !s.jeSuisLeMentor);
   const top = recommanderLocalement(profil, mentors, seances).slice(0, 3);
   const progMoy = objectifs.length ? Math.round(objectifs.reduce((a, o) => a + progression(o), 0) / objectifs.length) : 0;
 
@@ -80,7 +80,8 @@ export default function TableauDeBord() {
             <Carte className="space-y-4">
               {aVenir.length === 0 && <p className="text-sm text-slate-500">Aucune séance planifiée.</p>}
               {aVenir.slice(0, 3).map((s) => {
-                const m = mentors.find((x) => x.id === s.mentorId)!;
+                const m = personnes.find((x) => x.id === s.mentorId);
+                if (!m) return null;
                 return (
                   <div key={s.id} className="flex items-center gap-3">
                     <Avatar mentor={m} taille="sm" />

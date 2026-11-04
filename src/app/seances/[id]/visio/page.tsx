@@ -10,12 +10,12 @@ import { Avatar, Carte, bouton, boutonSecondaire, champ } from "@/components/ui"
 export default function SalleVisio() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { seances, tousMentors, majSeance, messages, envoyerMessage, pret } = useStore();
+  const { seances, personnes, majSeance, messages, envoyerMessage, pret } = useStore();
   const [texte, setTexte] = useState("");
 
   if (!pret) return null;
   const seance = seances.find((s) => s.id === id);
-  const mentor = tousMentors.find((m) => m.id === seance?.mentorId);
+  const mentor = personnes.find((m) => m.id === seance?.mentorId);
   if (!seance || !mentor) {
     return (
       <div className="py-20 text-center">

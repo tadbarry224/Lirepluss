@@ -29,7 +29,7 @@ function Evaluation({ seance }: { seance: Seance }) {
 }
 
 export default function Seances() {
-  const { seances, majSeance, tousMentors: mentors } = useStore();
+  const { seances, majSeance, personnes: mentors } = useStore();
   const [onglet, setOnglet] = useState<"avenir" | "passees">("avenir");
   const maintenant = new Date().toISOString();
   const liste = seances
@@ -52,7 +52,8 @@ export default function Seances() {
       <div className="space-y-4">
         {liste.length === 0 && <p className="py-10 text-center text-slate-500">Aucune séance ici.</p>}
         {liste.map((s) => {
-          const m = mentors.find((x) => x.id === s.mentorId)!;
+          const m = mentors.find((x) => x.id === s.mentorId);
+          if (!m) return null;
           return (
             <Carte key={s.id}>
               <div className="flex flex-wrap items-center gap-4">
@@ -71,7 +72,7 @@ export default function Seances() {
                   <button onClick={() => majSeance(s.id, { statut: "annulee" })} className={boutonSecondaire}>Annuler</button>
                 </div>
               )}
-              {s.statut === "terminee" && <Evaluation seance={s} />}
+              {s.statut === "terminee" && !s.jeSuisLeMentor && <Evaluation seance={s} />}
             </Carte>
           );
         })}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { domaines } from "@/lib/data";
-import { ID_MON_PROFIL_MENTOR, useStore } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { profilsBeneficiaires, type Profil } from "@/lib/types";
 import { Carte, Titre, bouton, boutonSecondaire, champ } from "@/components/ui";
 
@@ -17,13 +17,13 @@ export default function PageProfil() {
 }
 
 function FormulaireProfil() {
-  const { profil, majProfil, reinitialiser, publierProfilMentor, retirerProfilMentor, mentorsInscrits } = useStore();
+  const { profil, majProfil, reinitialiser, publierProfilMentor, retirerProfilMentor, monIdMentor, mode } = useStore();
   const [f, setF] = useState<Profil>(profil);
   const [competences, setCompetences] = useState(profil.competences.join(", "));
   const [langues, setLangues] = useState((profil.langues ?? ["Français"]).join(", "));
   const [dispos, setDispos] = useState((profil.disponibilites ?? ["Sam 10:00"]).join(", "));
   const [ok, setOk] = useState("");
-  const estPublie = mentorsInscrits.some((m) => m.id === ID_MON_PROFIL_MENTOR);
+  const estPublie = monIdMentor !== null;
   const mentor = f.role === "mentor";
 
   const basculerDomaine = (id: string) =>
@@ -104,9 +104,9 @@ function FormulaireProfil() {
 
         <div className="flex flex-wrap items-center gap-3">
           <button className={bouton}>{mentor ? (estPublie ? "Mettre à jour mon profil de mentor" : "Publier mon profil de mentor") : "Enregistrer"}</button>
-          {estPublie && <Link href={`/mentors/${ID_MON_PROFIL_MENTOR}`} className={boutonSecondaire}>Voir ma fiche publique</Link>}
+          {estPublie && <Link href={`/mentors/${monIdMentor}`} className={boutonSecondaire}>Voir ma fiche publique</Link>}
           {ok && <span className="text-sm text-emerald-600">✓ {ok}</span>}
-          <button type="button" onClick={() => { if (confirm("Réinitialiser toutes les données de démo ?")) reinitialiser(); }} className={`${boutonSecondaire} ml-auto`}>Réinitialiser la démo</button>
+          {mode === "demo" && <button type="button" onClick={() => { if (confirm("Réinitialiser toutes les données de démo ?")) reinitialiser(); }} className={`${boutonSecondaire} ml-auto`}>Réinitialiser la démo</button>}
         </div>
       </form>
     </div>

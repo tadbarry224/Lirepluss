@@ -39,7 +39,7 @@ function RechercheMentors() {
       const rep = await fetch("/api/recommandation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profil: profilRequete }),
+        body: JSON.stringify({ profil: profilRequete, mentors }),
       });
       if (!rep.ok) throw new Error();
       const data = (await rep.json()) as { recommandations: Recommandation[] };

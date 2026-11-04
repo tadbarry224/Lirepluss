@@ -34,7 +34,7 @@ function prochainsCreneaux(dispos: string[], nombre = 6) {
 export default function ProfilMentor() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage, tousMentors: mentors, pret } = useStore();
+  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage, personnes: mentors, pret, monIdMentor } = useStore();
   const mentor = mentors.find((m) => m.id === id);
   const [creneau, setCreneau] = useState<string>("");
   const [sujet, setSujet] = useState("");
@@ -51,6 +51,8 @@ export default function ProfilMentor() {
     );
   }
 
+  const estMoi = mentor.id === monIdMentor;
+  const peutReserver = mentor.role !== "mentore" && !estMoi;
   const compat = scoreCompatibilite(profil, mentor, seances);
   const note = noteMoyenne(mentor.id, seances);
   const avis = seances.filter((s) => s.mentorId === mentor.id && s.note);
@@ -78,7 +80,7 @@ export default function ProfilMentor() {
             <p className="mt-1 text-sm text-slate-500">📍 {mentor.ville} · {mentor.experience} ans d&apos;expérience · 🗣️ {mentor.langues.join(", ")}</p>
             {note && <div className="mt-2 flex items-center gap-2"><Etoiles note={Math.round(note)} /><span className="text-sm text-slate-500">{note.toFixed(1)} ({avis.length} avis)</span></div>}
           </div>
-          <div className="flex gap-2">
+          <div className={`flex gap-2 ${estMoi ? "hidden" : ""}`}>
             <button onClick={() => basculerFavori(mentor.id)} className={boutonSecondaire}>{favoris.includes(mentor.id) ? "★ Favori" : "☆ Favori"}</button>
             <Link href={`/messages?mentor=${mentor.id}`} className={boutonSecondaire}>💬 Écrire</Link>
           </div>
@@ -91,13 +93,17 @@ export default function ProfilMentor() {
         {mentor.domaines.map((d) => domaines.find((x) => x.id === d)?.avertissement).filter(Boolean).map((a) => (
           <p key={a} className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">ℹ️ {a}</p>
         ))}
-        <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">✨ Compatibilité avec votre profil : <strong>{compat.score}%</strong> — {compat.raison}</p>
+        <p className={`mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 ${peutReserver ? "" : "hidden"}`}>✨ Compatibilité avec votre profil : <strong>{compat.score}%</strong> — {compat.raison}</p>
       </Carte>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Carte>
           <h2 className="mb-4 text-lg font-semibold">📅 Réserver une séance</h2>
-          {confirme ? (
+          {!peutReserver ? (
+            <p className="text-sm text-slate-500">
+              {estMoi ? "C'est votre fiche publique de mentor : voici ce que voient les mentorés." : "Cette personne n'est pas mentor."}
+            </p>
+          ) : confirme ? (
             <div className="space-y-3 text-center">
               <p className="text-4xl">🎉</p>
               <p className="font-medium">Séance réservée le {formatDate(creneau, true)} !</p>
