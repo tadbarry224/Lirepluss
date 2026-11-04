@@ -79,6 +79,7 @@ Ouvrir http://localhost:3000.
 ## Structure
 
 Vue d'ensemble (frontend, backend, base de données, GitHub) avec schémas : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Cahier des charges du hackathon : [docs/cahier-des-charges.md](docs/cahier-des-charges.md) ; ce qui est couvert : [docs/suivi-cahier-des-charges.md](docs/suivi-cahier-des-charges.md).
 
 Un seul projet Next.js, organisé en trois couches :
 
