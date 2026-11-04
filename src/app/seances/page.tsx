@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { mentors } from "@/lib/data";
 import { formatDate, useStore } from "@/lib/store";
 import type { Seance } from "@/lib/types";
 import { Avatar, Badge, Carte, Etoiles, Titre, bouton, boutonSecondaire, champ } from "@/components/ui";
@@ -30,7 +29,7 @@ function Evaluation({ seance }: { seance: Seance }) {
 }
 
 export default function Seances() {
-  const { seances, majSeance } = useStore();
+  const { seances, majSeance, tousMentors: mentors } = useStore();
   const [onglet, setOnglet] = useState<"avenir" | "passees">("avenir");
   const maintenant = new Date().toISOString();
   const liste = seances
@@ -66,7 +65,9 @@ export default function Seances() {
               </div>
               {onglet === "avenir" && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => majSeance(s.id, { statut: "terminee" })} className={bouton}>Marquer comme terminée</button>
+                  {s.format === "Visio" && <Link href={`/seances/${s.id}/visio`} className={bouton}>🎥 Rejoindre la visio</Link>}
+                  {s.format === "Chat" && <Link href={`/messages?mentor=${m.id}`} className={bouton}>💬 Ouvrir le chat</Link>}
+                  <button onClick={() => majSeance(s.id, { statut: "terminee" })} className={boutonSecondaire}>Marquer comme terminée</button>
                   <button onClick={() => majSeance(s.id, { statut: "annulee" })} className={boutonSecondaire}>Annuler</button>
                 </div>
               )}

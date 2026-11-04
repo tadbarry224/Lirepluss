@@ -5,6 +5,8 @@ export interface Domaine {
   nom: string;
   icone: string;
   description: string;
+  sousDomaines: string[];
+  avertissement?: string;
 }
 
 export interface Mentor {
@@ -20,7 +22,21 @@ export interface Mentor {
   langues: string[];
   disponibilites: string[];
   couleur: string;
+  /** true pour un mentor inscrit via la plateforme (et non une donnée de démo) */
+  inscrit?: boolean;
 }
+
+export const profilsBeneficiaires = [
+  "Étudiant",
+  "Jeune diplômé",
+  "Entrepreneur",
+  "Porteur de projet",
+  "Professionnel en reconversion",
+  "Développement de compétences",
+  "Professionnel expérimenté",
+] as const;
+
+export type Niveau = (typeof profilsBeneficiaires)[number];
 
 export interface Profil {
   nom: string;
@@ -29,7 +45,13 @@ export interface Profil {
   domaines: string[];
   competences: string[];
   besoins: string;
-  niveau: "Étudiant" | "Jeune diplômé" | "Professionnel" | "Entrepreneur";
+  niveau: Niveau;
+  // Champs spécifiques aux mentors
+  titre?: string;
+  organisation?: string;
+  experience?: number;
+  langues?: string[];
+  disponibilites?: string[];
 }
 
 export type StatutSeance = "planifiee" | "terminee" | "annulee";
@@ -39,7 +61,7 @@ export interface Seance {
   mentorId: string;
   date: string; // ISO
   sujet: string;
-  format: "Visio" | "Présentiel" | "Appel";
+  format: "Visio" | "Chat" | "Présentiel";
   statut: StatutSeance;
   note?: number;
   commentaire?: string;

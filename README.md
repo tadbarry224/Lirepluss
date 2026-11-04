@@ -9,13 +9,14 @@ Plateforme web de mise en relation entre mentors et mentorés, développée pour
 | Module | Page | Description |
 |---|---|---|
 | Tableau de bord | `/` | Statistiques, mentors recommandés, prochaines séances, objectifs, opportunités |
-| Profils | `/profil` | Création du profil mentor ou mentoré (domaines, compétences, besoins) |
+| Profils | `/profil` | Profil mentoré (étudiant, jeune diplômé, entrepreneur, porteur de projet, reconversion…) ou **inscription comme mentor** (le mentor apparaît dans la recherche) |
 | Recherche & mise en relation | `/mentors` | Filtres (texte, domaine, ville) + **recommandation par IA** (Claude) avec repli sur un algorithme local |
-| Profil mentor | `/mentors/[id]` | Bio, compatibilité, avis, ressources, **réservation de créneaux** |
-| Catalogue des domaines | `/domaines` | 10 domaines d'expertise |
+| Profil mentor | `/mentors/[id]` | Bio, compatibilité, avis, ressources, **réservation** en visio, chat ou présentiel |
+| Catalogue des domaines | `/domaines` | Les 7 domaines d'intervention des TDR et leurs sous-domaines, dont Culture/littérature et Campus France |
 | Séances | `/seances` | Planification, suivi, annulation, **évaluation par étoiles** |
+| Visio | `/seances/[id]/visio` | **Salle de visioconférence** intégrée (Jitsi Meet) avec chat de séance |
 | Espace d'échange | `/messages` | Messagerie avec les mentors |
-| Objectifs | `/objectifs` | Objectifs de carrière découpés en étapes, barre de progression |
+| Objectifs | `/objectifs` | **Parcours personnalisé généré par IA**, objectifs découpés en étapes, barre de progression |
 | Ressources | `/ressources` | Bibliothèque de guides, vidéos, modèles, podcasts |
 | Opportunités | `/opportunites` | Stages, emplois, bourses, concours, financements — publication par la communauté |
 

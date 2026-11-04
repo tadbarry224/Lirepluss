@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { mentors } from "@/lib/data";
+
 import { formatDate, useStore } from "@/lib/store";
 import { Avatar, Titre, bouton, champ } from "@/components/ui";
 
@@ -15,7 +15,7 @@ const reponsesAuto = [
 
 function Messagerie() {
   const params = useSearchParams();
-  const { messages, envoyerMessage } = useStore();
+  const { messages, envoyerMessage, tousMentors: mentors } = useStore();
   const avecConversation = [...new Set(messages.map((m) => m.mentorId))];
   const demande = params.get("mentor");
   const [actif, setActif] = useState<string>(demande ?? avecConversation[0] ?? mentors[0].id);

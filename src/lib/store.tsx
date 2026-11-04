@@ -2,13 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
+  mentors as mentorsDemo,
   messagesInitiaux,
   objectifsInitiaux,
   opportunitesInitiales,
   profilInitial,
   seancesInitiales,
 } from "./data";
-import type { Message, Objectif, Opportunite, Profil, Seance } from "./types";
+import type { Mentor, Message, Objectif, Opportunite, Profil, Seance } from "./types";
 
 interface Etat {
   profil: Profil;
@@ -17,6 +18,7 @@ interface Etat {
   objectifs: Objectif[];
   opportunites: Opportunite[];
   favoris: string[];
+  mentorsInscrits: Mentor[];
 }
 
 const etatInitial: Etat = {
@@ -26,12 +28,16 @@ const etatInitial: Etat = {
   objectifs: objectifsInitiaux,
   opportunites: opportunitesInitiales,
   favoris: [],
+  mentorsInscrits: [],
 };
 
-const CLE = "lireplus:etat:v1";
+const CLE = "lireplus:etat:v2";
+export const ID_MON_PROFIL_MENTOR = "moi";
 
 interface Store extends Etat {
   pret: boolean;
+  /** Mentors de démonstration + mentors inscrits via la plateforme */
+  tousMentors: Mentor[];
   majProfil: (p: Profil) => void;
   reserver: (s: Omit<Seance, "id" | "statut">) => void;
   majSeance: (id: string, champs: Partial<Seance>) => void;
@@ -42,6 +48,8 @@ interface Store extends Etat {
   supprimerObjectif: (id: string) => void;
   publierOpportunite: (o: Omit<Opportunite, "id">) => void;
   basculerFavori: (id: string) => void;
+  publierProfilMentor: (p: Profil) => void;
+  retirerProfilMentor: () => void;
   reinitialiser: () => void;
 }
 
@@ -81,6 +89,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const store: Store = {
     ...etat,
     pret,
+    tousMentors: [...mentorsDemo, ...etat.mentorsInscrits],
     majProfil: (profil) => maj(() => ({ profil })),
     reserver: (s) => maj((e) => ({ seances: [...e.seances, { ...s, id: uid(), statut: "planifiee" }] })),
     majSeance: (id, champs) =>
@@ -106,6 +115,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     publierOpportunite: (o) => maj((e) => ({ opportunites: [{ ...o, id: uid() }, ...e.opportunites] })),
     basculerFavori: (id) =>
       maj((e) => ({ favoris: e.favoris.includes(id) ? e.favoris.filter((f) => f !== id) : [...e.favoris, id] })),
+    publierProfilMentor: (p) =>
+      maj((e) => ({
+        mentorsInscrits: [
+          ...e.mentorsInscrits.filter((m) => m.id !== ID_MON_PROFIL_MENTOR),
+          {
+            id: ID_MON_PROFIL_MENTOR,
+            nom: p.nom,
+            titre: p.titre || "Mentor",
+            organisation: p.organisation || "Indépendant",
+            ville: p.ville,
+            domaines: p.domaines,
+            competences: p.competences,
+            bio: p.besoins,
+            experience: p.experience ?? 1,
+            langues: p.langues?.length ? p.langues : ["Français"],
+            disponibilites: p.disponibilites?.length ? p.disponibilites : ["Sam 10:00"],
+            couleur: "bg-emerald-700",
+            inscrit: true,
+          },
+        ],
+      })),
+    retirerProfilMentor: () =>
+      maj((e) => ({ mentorsInscrits: e.mentorsInscrits.filter((m) => m.id !== ID_MON_PROFIL_MENTOR) })),
     reinitialiser: () => setEtat(etatInitial),
   };
 

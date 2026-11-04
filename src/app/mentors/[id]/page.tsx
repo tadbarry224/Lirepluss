@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { domaineNom, mentors, ressources } from "@/lib/data";
+import { domaineNom, domaines, ressources } from "@/lib/data";
 import { noteMoyenne, scoreCompatibilite } from "@/lib/matching";
 import { formatDate, useStore } from "@/lib/store";
 import type { Seance } from "@/lib/types";
@@ -34,13 +34,14 @@ function prochainsCreneaux(dispos: string[], nombre = 6) {
 export default function ProfilMentor() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage } = useStore();
+  const { profil, seances, reserver, favoris, basculerFavori, envoyerMessage, tousMentors: mentors, pret } = useStore();
   const mentor = mentors.find((m) => m.id === id);
   const [creneau, setCreneau] = useState<string>("");
   const [sujet, setSujet] = useState("");
   const [format, setFormat] = useState<Seance["format"]>("Visio");
   const [confirme, setConfirme] = useState(false);
 
+  if (!pret) return null;
   if (!mentor) {
     return (
       <div className="py-20 text-center">
@@ -87,6 +88,9 @@ export default function ProfilMentor() {
           {mentor.domaines.map((d) => <Badge key={d} ton="vert">{domaineNom(d)}</Badge>)}
           {mentor.competences.map((c) => <Badge key={c}>{c}</Badge>)}
         </div>
+        {mentor.domaines.map((d) => domaines.find((x) => x.id === d)?.avertissement).filter(Boolean).map((a) => (
+          <p key={a} className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">ℹ️ {a}</p>
+        ))}
         <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">✨ Compatibilité avec votre profil : <strong>{compat.score}%</strong> — {compat.raison}</p>
       </Carte>
 
@@ -117,11 +121,27 @@ export default function ProfilMentor() {
                   ))}
                 </div>
               </div>
-              <select value={format} onChange={(e) => setFormat(e.target.value as Seance["format"])} className={champ}>
-                <option>Visio</option>
-                <option>Présentiel</option>
-                <option>Appel</option>
-              </select>
+              <div>
+                <p className="mb-2 text-sm font-medium">Format de la séance</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    ["Visio", "🎥", "Dans l'appli"],
+                    ["Chat", "💬", "Par messages"],
+                    ["Présentiel", "🤝", "Sur place"],
+                  ] as const).map(([f, icone, aide]) => (
+                    <button
+                      type="button"
+                      key={f}
+                      onClick={() => setFormat(f)}
+                      className={`rounded-xl border px-2 py-2 text-center text-xs ${format === f ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" : "border-slate-300 dark:border-slate-700"}`}
+                    >
+                      <span className="block text-lg">{icone}</span>
+                      <span className="font-semibold">{f}</span>
+                      <span className="block text-slate-500">{aide}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <input value={sujet} onChange={(e) => setSujet(e.target.value)} placeholder="Sujet de la séance (ex : préparer mon entretien)" className={champ} />
               <button disabled={!creneau || !sujet.trim()} className={`${bouton} w-full`}>Confirmer la réservation</button>
             </form>
