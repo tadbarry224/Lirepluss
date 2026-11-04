@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { mentors } from "@/lib/data";
+
 import { formatDate, progression, uid, useStore } from "@/lib/store";
 import { Barre, Carte, Titre, bouton, boutonSecondaire, champ } from "@/components/ui";
+import { GenerateurParcours } from "@/components/GenerateurParcours";
 
 function NouvelObjectif({ fermer }: { fermer: () => void }) {
-  const { ajouterObjectif } = useStore();
+  const { ajouterObjectif, tousMentors: mentors } = useStore();
   const [titre, setTitre] = useState("");
   const [echeance, setEcheance] = useState("");
   const [mentorId, setMentorId] = useState("");
@@ -44,13 +45,14 @@ function NouvelObjectif({ fermer }: { fermer: () => void }) {
 }
 
 export default function Objectifs() {
-  const { objectifs, basculerEtape, ajouterEtape, supprimerObjectif } = useStore();
+  const { objectifs, basculerEtape, ajouterEtape, supprimerObjectif, tousMentors: mentors } = useStore();
   const [creation, setCreation] = useState(false);
   const [nouvelles, setNouvelles] = useState<Record<string, string>>({});
 
   return (
     <div>
       <Titre titre="Objectifs & progression" sousTitre="Fixez vos objectifs de carrière et suivez vos progrès avec votre mentor." action={!creation && <button onClick={() => setCreation(true)} className={bouton}>+ Nouvel objectif</button>} />
+      <GenerateurParcours />
       {creation && <NouvelObjectif fermer={() => setCreation(false)} />}
       <div className="grid gap-4 lg:grid-cols-2">
         {objectifs.map((o) => {

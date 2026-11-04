@@ -5,6 +5,8 @@ export interface Domaine {
   nom: string;
   icone: string;
   description: string;
+  sousDomaines: string[];
+  avertissement?: string;
 }
 
 export interface Mentor {
@@ -20,7 +22,23 @@ export interface Mentor {
   langues: string[];
   disponibilites: string[];
   couleur: string;
+  /** true pour un mentor inscrit via la plateforme (et non une donnée de démo) */
+  inscrit?: boolean;
+  /** Rôle de la personne (les mentorés apparaissent aussi, côté mentor, dans les séances et messages) */
+  role?: Role;
 }
+
+export const profilsBeneficiaires = [
+  "Étudiant",
+  "Jeune diplômé",
+  "Entrepreneur",
+  "Porteur de projet",
+  "Professionnel en reconversion",
+  "Développement de compétences",
+  "Professionnel expérimenté",
+] as const;
+
+export type Niveau = (typeof profilsBeneficiaires)[number];
 
 export interface Profil {
   nom: string;
@@ -29,17 +47,26 @@ export interface Profil {
   domaines: string[];
   competences: string[];
   besoins: string;
-  niveau: "Étudiant" | "Jeune diplômé" | "Professionnel" | "Entrepreneur";
+  niveau: Niveau;
+  // Champs spécifiques aux mentors
+  titre?: string;
+  organisation?: string;
+  experience?: number;
+  langues?: string[];
+  disponibilites?: string[];
 }
 
 export type StatutSeance = "planifiee" | "terminee" | "annulee";
 
 export interface Seance {
   id: string;
+  /** L'autre participant de la séance (le mentor pour un mentoré, le mentoré pour un mentor) */
   mentorId: string;
+  /** true si l'utilisateur connecté est le mentor de cette séance */
+  jeSuisLeMentor?: boolean;
   date: string; // ISO
   sujet: string;
-  format: "Visio" | "Présentiel" | "Appel";
+  format: "Visio" | "Chat" | "Présentiel";
   statut: StatutSeance;
   note?: number;
   commentaire?: string;
@@ -47,6 +74,7 @@ export interface Seance {
 
 export interface Message {
   id: string;
+  /** L'interlocuteur de la conversation */
   mentorId: string;
   auteur: "moi" | "mentor";
   texte: string;

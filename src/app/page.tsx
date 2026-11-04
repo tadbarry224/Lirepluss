@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { APP_TAGLINE, mentors } from "@/lib/data";
+import { APP_TAGLINE, EVENEMENT } from "@/lib/data";
 import { recommanderLocalement } from "@/lib/matching";
 import { formatDate, progression, useStore } from "@/lib/store";
 import { Avatar, Barre, Carte, CarteMentor, bouton, boutonSecondaire } from "@/components/ui";
 
 export default function TableauDeBord() {
-  const { profil, seances, objectifs, opportunites, messages } = useStore();
+  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes } = useStore();
   const aVenir = seances
     .filter((s) => s.statut === "planifiee" && new Date(s.date) >= new Date())
     .sort((a, b) => a.date.localeCompare(b.date));
   const terminees = seances.filter((s) => s.statut === "terminee");
-  const aEvaluer = terminees.filter((s) => !s.note);
+  const aEvaluer = terminees.filter((s) => !s.note && !s.jeSuisLeMentor);
   const top = recommanderLocalement(profil, mentors, seances).slice(0, 3);
   const progMoy = objectifs.length ? Math.round(objectifs.reduce((a, o) => a + progression(o), 0) / objectifs.length) : 0;
 
@@ -26,12 +26,13 @@ export default function TableauDeBord() {
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white sm:p-10">
-        <p className="text-sm font-medium uppercase tracking-wider text-emerald-100">Mentorat à l&apos;ère du numérique</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-emerald-100">{EVENEMENT}</p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Bonjour {profil.nom} 👋</h1>
-        <p className="mt-3 max-w-2xl text-emerald-50">{APP_TAGLINE}</p>
+        <p className="mt-3 max-w-2xl text-emerald-50">Le mentorat à l&apos;ère du numérique : {APP_TAGLINE.charAt(0).toLowerCase() + APP_TAGLINE.slice(1)}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/mentors" className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">Trouver mon mentor</Link>
-          <Link href="/profil" className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10">Compléter mon profil</Link>
+          <Link href="/objectifs" className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10">✨ Créer mon parcours avec l&apos;IA</Link>
+          <Link href="/profil" className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10">{profil.role === "mentor" ? "Mon profil de mentor" : "Devenir mentor"}</Link>
         </div>
       </section>
 
@@ -79,7 +80,8 @@ export default function TableauDeBord() {
             <Carte className="space-y-4">
               {aVenir.length === 0 && <p className="text-sm text-slate-500">Aucune séance planifiée.</p>}
               {aVenir.slice(0, 3).map((s) => {
-                const m = mentors.find((x) => x.id === s.mentorId)!;
+                const m = personnes.find((x) => x.id === s.mentorId);
+                if (!m) return null;
                 return (
                   <div key={s.id} className="flex items-center gap-3">
                     <Avatar mentor={m} taille="sm" />

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { domaines, mentors } from "@/lib/data";
+import { domaines } from "@/lib/data";
 import { noteMoyenne, recommanderLocalement } from "@/lib/matching";
 import { useStore } from "@/lib/store";
 import type { Recommandation } from "@/lib/types";
@@ -11,7 +11,7 @@ import { Carte, CarteMentor, Titre, bouton, champ } from "@/components/ui";
 
 function RechercheMentors() {
   const params = useSearchParams();
-  const { profil, seances } = useStore();
+  const { profil, seances, tousMentors: mentors } = useStore();
   const [texte, setTexte] = useState("");
   const [domaine, setDomaine] = useState(params.get("domaine") ?? "");
   const [ville, setVille] = useState("");
@@ -30,7 +30,7 @@ function RechercheMentors() {
         (!ville || m.ville === ville) &&
         (!q || [m.nom, m.titre, m.organisation, ...m.competences].join(" ").toLowerCase().includes(q)),
     );
-  }, [texte, domaine, ville]);
+  }, [texte, domaine, ville, mentors]);
 
   async function recommander() {
     setChargement(true);
@@ -39,7 +39,7 @@ function RechercheMentors() {
       const rep = await fetch("/api/recommandation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profil: profilRequete }),
+        body: JSON.stringify({ profil: profilRequete, mentors }),
       });
       if (!rep.ok) throw new Error();
       const data = (await rep.json()) as { recommandations: Recommandation[] };

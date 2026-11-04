@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { mentors } from "@/lib/data";
+
 import { formatDate, useStore } from "@/lib/store";
 import { Avatar, Titre, bouton, champ } from "@/components/ui";
 
@@ -15,20 +15,33 @@ const reponsesAuto = [
 
 function Messagerie() {
   const params = useSearchParams();
-  const { messages, envoyerMessage } = useStore();
+  const { messages, envoyerMessage, personnes: mentors, mode } = useStore();
   const avecConversation = [...new Set(messages.map((m) => m.mentorId))];
   const demande = params.get("mentor");
-  const [actif, setActif] = useState<string>(demande ?? avecConversation[0] ?? mentors[0].id);
+  const [choix, setActif] = useState<string | null>(demande);
+  // Sans choix explicite, on ouvre la conversation la plus récente (elle peut arriver en temps réel).
+  const actif = choix ?? avecConversation.at(-1) ?? "";
   const [texte, setTexte] = useState("");
   const fin = useRef<HTMLDivElement>(null);
 
   const contacts = [...new Set([...(demande ? [demande] : []), ...avecConversation])]
-    .map((id) => mentors.find((m) => m.id === id)!)
-    .filter(Boolean);
+    .map((id) => mentors.find((m) => m.id === id))
+    .filter((m): m is NonNullable<typeof m> => Boolean(m));
   const fil = messages.filter((m) => m.mentorId === actif);
-  const mentor = mentors.find((m) => m.id === actif)!;
+  const mentor = mentors.find((m) => m.id === actif);
 
   useEffect(() => fin.current?.scrollIntoView({ behavior: "smooth" }), [fil.length]);
+
+  if (!mentor) {
+    return (
+      <div>
+        <Titre titre="Espace d'échange" sousTitre="Discutez avec vos mentors entre les séances." />
+        <p className="py-16 text-center text-slate-500">
+          Aucune conversation pour l&apos;instant. Ouvrez la fiche d&apos;un mentor et cliquez sur « Écrire ».
+        </p>
+      </div>
+    );
+  }
 
   function envoyer(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +49,7 @@ function Messagerie() {
     envoyerMessage(actif, texte.trim());
     setTexte("");
     const id = actif;
-    setTimeout(() => envoyerMessage(id, reponsesAuto[Math.floor(Math.random() * reponsesAuto.length)], "mentor"), 1500);
+    if (mode === "demo") setTimeout(() => envoyerMessage(id, reponsesAuto[Math.floor(Math.random() * reponsesAuto.length)], "mentor"), 1500);
   }
 
   return (
