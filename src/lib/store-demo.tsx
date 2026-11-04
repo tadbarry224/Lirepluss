@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ateliersInitiaux,
   mentors as mentorsDemo,
   messagesInitiaux,
   objectifsInitiaux,
   opportunitesInitiales,
   profilInitial,
   seancesInitiales,
+  temoignagesInitiaux,
 } from "./data";
 import { StoreContext, uid, type Store } from "./store-core";
-import type { Mentor, Message, Objectif, Opportunite, Profil, Seance } from "./types";
+import type { Mentor, Message, Objectif, Opportunite, Profil, Seance, Temoignage } from "./types";
 
 /** Mode démo : toutes les données restent dans le navigateur (localStorage). */
 
@@ -22,6 +24,8 @@ interface Etat {
   opportunites: Opportunite[];
   favoris: string[];
   mentorsInscrits: Mentor[];
+  mesAteliers: string[];
+  temoignagesPublies: Temoignage[];
 }
 
 const etatInitial: Etat = {
@@ -32,6 +36,8 @@ const etatInitial: Etat = {
   opportunites: opportunitesInitiales,
   favoris: [],
   mentorsInscrits: [],
+  mesAteliers: [],
+  temoignagesPublies: [],
 };
 
 const CLE = "lireplus:etat:v2";
@@ -74,6 +80,8 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     email: null,
     erreur: null,
     tousMentors,
+    ateliers: ateliersInitiaux.map((a) => ({ ...a, inscrits: a.inscrits + (etat.mesAteliers.includes(a.id) ? 1 : 0) })),
+    temoignages: [...etat.temoignagesPublies, ...temoignagesInitiaux],
     personnes: tousMentors,
     monIdMentor: etat.mentorsInscrits.some((m) => m.id === ID_MOI) ? ID_MOI : null,
     majProfil: (profil) => maj(() => ({ profil })),
@@ -125,6 +133,17 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         ],
       })),
     retirerProfilMentor: () => maj((e) => ({ mentorsInscrits: e.mentorsInscrits.filter((m) => m.id !== ID_MOI) })),
+    basculerInscriptionAtelier: (id) =>
+      maj((e) => ({
+        mesAteliers: e.mesAteliers.includes(id) ? e.mesAteliers.filter((x) => x !== id) : [...e.mesAteliers, id],
+      })),
+    publierTemoignage: (t) =>
+      maj((e) => ({
+        temoignagesPublies: [
+          { ...t, id: uid(), date: new Date().toISOString(), auteurNom: e.profil.nom, auteurNiveau: e.profil.niveau },
+          ...e.temoignagesPublies,
+        ],
+      })),
     reinitialiser: () => setEtat(etatInitial),
     deconnexion: () => {},
   };

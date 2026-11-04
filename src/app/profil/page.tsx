@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { domaines } from "@/lib/data";
+import { attentesProgramme, charteMentor, domaines } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { profilsBeneficiaires, type Profil } from "@/lib/types";
 import { Carte, Titre, bouton, boutonSecondaire, champ } from "@/components/ui";
@@ -78,10 +78,16 @@ function FormulaireProfil() {
             </div>
             <label className="block text-sm">Langues (séparées par des virgules)<input value={langues} onChange={(e) => setLangues(e.target.value)} className={`${champ} mt-1`} /></label>
             <label className="block text-sm">Disponibilités (ex : Lun 18:00, Sam 10:00)<input value={dispos} onChange={(e) => setDispos(e.target.value)} className={`${champ} mt-1`} /></label>
-            <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800/50 dark:text-slate-400">
-              En tant que mentor, vous vous engagez à accompagner avec bienveillance et professionnalisme, et à aider le mentoré à développer son autonomie
-              sans faire à sa place.
-            </p>
+            <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+              <p className="mb-1 text-sm font-semibold">Charte d&apos;engagement du mentor</p>
+              <ul className="list-disc space-y-0.5 pl-5 text-xs text-slate-600 dark:text-slate-400">
+                {charteMentor.map((c) => <li key={c}>{c}</li>)}
+              </ul>
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm font-medium">
+                <input type="checkbox" checked={Boolean(f.charteAcceptee)} onChange={(e) => setF({ ...f, charteAcceptee: e.target.checked })} className="h-4 w-4 accent-emerald-600" />
+                J&apos;accepte la charte (obligatoire pour être mentor)
+              </label>
+            </div>
           </Carte>
         )}
 
@@ -94,6 +100,21 @@ function FormulaireProfil() {
               </button>
             ))}
           </div>
+          {!mentor && (
+            <div>
+              <p className="mb-2 text-sm">Mes attentes</p>
+              <div className="flex flex-wrap gap-2">
+                {attentesProgramme.map((a) => {
+                  const actif = f.attentes?.includes(a.id) ?? false;
+                  return (
+                    <button type="button" key={a.id} onClick={() => setF({ ...f, attentes: actif ? (f.attentes ?? []).filter((x) => x !== a.id) : [...(f.attentes ?? []), a.id] })} className={`rounded-full border px-3 py-1 text-xs ${actif ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 dark:border-slate-700"}`}>
+                      {a.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <label className="block text-sm">{mentor ? "Compétences que je peux transmettre" : "Compétences que j'ai ou que je veux développer"} (séparées par des virgules)
             <input value={competences} onChange={(e) => setCompetences(e.target.value)} className={`${champ} mt-1`} placeholder="Ex : Prise de parole en public, Business plan…" />
           </label>
@@ -103,7 +124,7 @@ function FormulaireProfil() {
         </Carte>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button className={bouton}>{mentor ? (estPublie ? "Mettre à jour mon profil de mentor" : "Publier mon profil de mentor") : "Enregistrer"}</button>
+          <button disabled={mentor && !f.charteAcceptee} className={bouton}>{mentor ? (estPublie ? "Mettre à jour mon profil de mentor" : "Publier mon profil de mentor") : "Enregistrer"}</button>
           {estPublie && <Link href={`/mentors/${monIdMentor}`} className={boutonSecondaire}>Voir ma fiche publique</Link>}
           {ok && <span className="text-sm text-emerald-600">✓ {ok}</span>}
           {mode === "demo" && <button type="button" onClick={() => { if (confirm("Réinitialiser toutes les données de démo ?")) reinitialiser(); }} className={`${boutonSecondaire} ml-auto`}>Réinitialiser la démo</button>}

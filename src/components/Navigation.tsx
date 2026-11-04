@@ -11,10 +11,12 @@ const liens = [
   { href: "/mentors", label: "Trouver un mentor", icone: "🔎" },
   { href: "/domaines", label: "Domaines", icone: "🗂️" },
   { href: "/seances", label: "Séances", icone: "📅" },
-  { href: "/messages", label: "Messages", icone: "💬" },
+  { href: "/ateliers", label: "Ateliers", icone: "👥" },
+  { href: "/messages", label: "Messages", icone: "✉️" },
   { href: "/objectifs", label: "Objectifs", icone: "🎯" },
   { href: "/ressources", label: "Ressources", icone: "📚" },
   { href: "/opportunites", label: "Opportunités", icone: "💼" },
+  { href: "/temoignages", label: "Témoignages", icone: "💬" },
   { href: "/profil", label: "Mon profil", icone: "👤" },
 ];
 
@@ -35,13 +37,13 @@ export function Navigation() {
       </header>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 transform border-r border-slate-200 bg-white p-4 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 dark:border-slate-800 dark:bg-slate-950 ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 transform flex-col border-r border-slate-200 bg-white p-4 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 dark:border-slate-800 dark:bg-slate-950 ${ouvert ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <Link href="/" onClick={() => setOuvert(false)} className="mb-8 hidden items-center gap-2 px-2 lg:flex">
+        <Link href="/" onClick={() => setOuvert(false)} className="mb-6 hidden shrink-0 items-center gap-2 px-2 lg:flex">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-lg text-white">L+</span>
           <span className="text-xl font-bold">{APP_NAME}</span>
         </Link>
-        <nav className="flex flex-col gap-1">
+        <nav className="-mx-1 flex flex-1 flex-col gap-1 overflow-y-auto px-1">
           {liens.map((l) => (
             <Link
               key={l.href}
@@ -54,7 +56,7 @@ export function Navigation() {
             </Link>
           ))}
         </nav>
-        <div className="absolute inset-x-4 bottom-4 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
+        <div className="mt-4 shrink-0 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
           <p className="truncate font-semibold">{profil.nom}</p>
           <p className="text-xs text-slate-500">{profil.role === "mentor" ? "Mentor" : "Mentoré"} · {profil.niveau}</p>
           {mode === "supabase" ? (

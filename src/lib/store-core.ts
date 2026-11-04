@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext } from "react";
-import type { Mentor, Message, Objectif, Opportunite, Profil, Seance } from "./types";
+import type { Atelier, Mentor, Message, Objectif, Opportunite, Profil, Seance, Temoignage } from "./types";
 
 /**
  * Interface commune aux deux modes de stockage :
@@ -21,6 +21,10 @@ export interface Store {
   objectifs: Objectif[];
   opportunites: Opportunite[];
   favoris: string[];
+  ateliers: Atelier[];
+  /** Identifiants des ateliers auxquels je suis inscrit */
+  mesAteliers: string[];
+  temoignages: Temoignage[];
 
   /** Personnes proposées comme mentors dans la recherche */
   tousMentors: Mentor[];
@@ -41,6 +45,8 @@ export interface Store {
   supprimerObjectif: (id: string) => void;
   publierOpportunite: (o: Omit<Opportunite, "id">) => void;
   basculerFavori: (id: string) => void;
+  basculerInscriptionAtelier: (atelierId: string) => void;
+  publierTemoignage: (t: Omit<Temoignage, "id" | "date" | "auteurNom" | "auteurNiveau">) => void;
   reinitialiser: () => void;
   deconnexion: () => void;
 }

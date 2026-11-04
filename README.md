@@ -8,12 +8,15 @@ Plateforme web de mise en relation entre mentors et mentorés, développée pour
 
 | Module | Page | Description |
 |---|---|---|
+| Identification des besoins | `/bienvenue` | Questionnaire d'accueil en 4 étapes (étape 1 du programme) : profil, domaines, attentes rattachées aux axes, format préféré ; charte d'engagement pour les mentors |
+| Ateliers thématiques | `/ateliers` | Ateliers collectifs animés par les mentors (étape 4) : inscription, places restantes, visio de groupe |
+| Témoignages | `/temoignages` | Restitution des expériences de mentorat (étape 7), publiées après les séances |
 | Tableau de bord | `/` | Statistiques, mentors recommandés, prochaines séances, objectifs, opportunités |
 | Profils | `/profil` | Profil mentoré (étudiant, jeune diplômé, entrepreneur, porteur de projet, reconversion…) ou **inscription comme mentor** (le mentor apparaît dans la recherche) |
 | Recherche & mise en relation | `/mentors` | Filtres (texte, domaine, ville) + **recommandation par IA** (Claude) avec repli sur un algorithme local |
 | Profil mentor | `/mentors/[id]` | Bio, compatibilité, avis, ressources, **réservation** en visio, chat ou présentiel |
 | Catalogue des domaines | `/domaines` | Les 7 domaines d'intervention des TDR et leurs sous-domaines, dont Culture/littérature et Campus France |
-| Séances | `/seances` | Planification, suivi, annulation, **évaluation par étoiles** |
+| Séances | `/seances` | Planification, suivi, annulation, **évaluation**, **plan d'action** transformé en objectif (« mettre en pratique les conseils reçus ») |
 | Visio | `/seances/[id]/visio` | **Salle de visioconférence** intégrée (Jitsi Meet) avec chat de séance |
 | Espace d'échange | `/messages` | Messagerie avec les mentors |
 | Objectifs | `/objectifs` | **Parcours personnalisé généré par IA**, objectifs découpés en étapes, barre de progression |

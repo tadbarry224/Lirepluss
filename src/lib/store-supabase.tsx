@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { profilInitial } from "./data";
 import { StoreContext, type Store } from "./store-core";
 import { couleurPour, supabase } from "./supabase";
-import type { Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance } from "./types";
+import type { Atelier, Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance } from "./types";
 
 /** Mode Supabase : comptes, base de données partagée et temps réel. */
 
@@ -27,6 +27,9 @@ interface LigneProfil {
   langues: string[];
   disponibilites: string[];
   couleur: string | null;
+  attentes: string[];
+  format_prefere: Seance["format"] | null;
+  charte_acceptee: boolean;
 }
 interface LigneSeance {
   id: string;
@@ -53,6 +56,31 @@ interface LigneObjectif {
   titre: string;
   echeance: string;
   etapes: Etape[];
+}
+interface LigneAtelier {
+  id: string;
+  titre: string;
+  domaine: string;
+  animateur_id: string;
+  date: string;
+  duree_minutes: number;
+  format: Atelier["format"];
+  lieu: string;
+  places: number;
+  description: string;
+}
+interface LigneInscription {
+  atelier_id: string;
+  profil_id: string;
+}
+interface LigneTemoignage {
+  id: string;
+  auteur_nom: string;
+  auteur_niveau: string;
+  mentor_id: string;
+  texte: string;
+  note: number;
+  created_at: string;
 }
 interface LigneOpportunite {
   id: string;
@@ -97,6 +125,9 @@ const versProfil = (p: LigneProfil): Profil => ({
   experience: p.experience ?? undefined,
   langues: p.langues,
   disponibilites: p.disponibilites,
+  attentes: p.attentes ?? [],
+  formatPrefere: p.format_prefere ?? undefined,
+  charteAcceptee: p.charte_acceptee ?? false,
 });
 
 const versLigneProfil = (p: Profil) => ({
@@ -112,6 +143,9 @@ const versLigneProfil = (p: Profil) => ({
   experience: p.experience ?? null,
   langues: p.langues?.length ? p.langues : ["Français"],
   disponibilites: p.disponibilites ?? [],
+  attentes: p.attentes ?? [],
+  format_prefere: p.formatPrefere ?? null,
+  charte_acceptee: p.charteAcceptee ?? false,
 });
 
 const versOpportunite = (o: LigneOpportunite): Opportunite => ({
@@ -140,6 +174,9 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   const [objectifsL, setObjectifsL] = useState<LigneObjectif[]>([]);
   const [opportunitesL, setOpportunitesL] = useState<LigneOpportunite[]>([]);
   const [favoris, setFavoris] = useState<string[]>([]);
+  const [ateliersL, setAteliersL] = useState<LigneAtelier[]>([]);
+  const [inscriptions, setInscriptions] = useState<LigneInscription[]>([]);
+  const [temoignagesL, setTemoignagesL] = useState<LigneTemoignage[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const signaler = useCallback((e: PostgrestError | Error | null) => {
@@ -179,7 +216,7 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
     if (!userId) return;
     let annule = false;
     (async () => {
-      const [p, tous, s, m, o, opp, fav] = await Promise.all([
+      const [p, tous, s, m, o, opp, fav, at, ins, tem] = await Promise.all([
         sb.from("profiles").select("*").eq("user_id", userId).single(),
         sb.from("profiles").select("*").order("created_at"),
         sb.from("seances").select("*").order("date"),
@@ -187,9 +224,15 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
         sb.from("objectifs").select("*").order("created_at"),
         sb.from("opportunites").select("*").order("created_at", { ascending: false }),
         sb.from("favoris").select("mentor_id"),
+        sb.from("ateliers").select("*").order("date"),
+        sb.from("inscriptions_ateliers").select("atelier_id, profil_id"),
+        sb.from("temoignages").select("*").order("created_at", { ascending: false }),
       ]);
       if (annule) return;
-      for (const r of [p, tous, s, m, o, opp, fav]) signaler(r.error);
+      for (const r of [p, tous, s, m, o, opp, fav, at, ins, tem]) signaler(r.error);
+      setAteliersL((at.data ?? []) as LigneAtelier[]);
+      setInscriptions((ins.data ?? []) as LigneInscription[]);
+      setTemoignagesL((tem.data ?? []) as LigneTemoignage[]);
       setMoi(p.data as LigneProfil | null);
       setProfils((tous.data ?? []) as LigneProfil[]);
       setSeancesL((s.data ?? []) as LigneSeance[]);
@@ -302,6 +345,29 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
     objectifs,
     opportunites: opportunitesL.map(versOpportunite),
     favoris,
+    ateliers: ateliersL.map((a) => ({
+      id: a.id,
+      titre: a.titre,
+      domaine: a.domaine,
+      animateurId: a.animateur_id,
+      date: a.date,
+      dureeMinutes: a.duree_minutes,
+      format: a.format,
+      lieu: a.lieu,
+      places: a.places,
+      inscrits: inscriptions.filter((i) => i.atelier_id === a.id).length,
+      description: a.description,
+    })),
+    mesAteliers: inscriptions.filter((i) => i.profil_id === monId).map((i) => i.atelier_id),
+    temoignages: temoignagesL.map((t) => ({
+      id: t.id,
+      auteurNom: t.auteur_nom,
+      auteurNiveau: t.auteur_niveau,
+      mentorId: t.mentor_id,
+      texte: t.texte,
+      note: t.note,
+      date: t.created_at,
+    })),
     tousMentors,
     personnes,
     monIdMentor: moi?.role === "mentor" ? moi.id : null,
@@ -392,6 +458,27 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
         setFavoris((f) => [...f, mentorId]);
         signaler((await sb.from("favoris").insert({ profil_id: monId, mentor_id: mentorId })).error);
       }
+    },
+
+    basculerInscriptionAtelier: async (atelierId) => {
+      if (!monId) return;
+      const inscrit = inscriptions.some((i) => i.atelier_id === atelierId && i.profil_id === monId);
+      if (inscrit) {
+        setInscriptions((l) => l.filter((i) => !(i.atelier_id === atelierId && i.profil_id === monId)));
+        signaler((await sb.from("inscriptions_ateliers").delete().eq("atelier_id", atelierId).eq("profil_id", monId)).error);
+      } else {
+        setInscriptions((l) => [...l, { atelier_id: atelierId, profil_id: monId }]);
+        signaler((await sb.from("inscriptions_ateliers").insert({ atelier_id: atelierId, profil_id: monId })).error);
+      }
+    },
+    publierTemoignage: async (t) => {
+      if (!monId || !moi) return;
+      const { data, error } = await sb
+        .from("temoignages")
+        .insert({ auteur_id: monId, auteur_nom: moi.nom, auteur_niveau: moi.niveau, mentor_id: t.mentorId, texte: t.texte, note: t.note })
+        .select()
+        .single();
+      if (!signaler(error)) setTemoignagesL((l) => [data as LigneTemoignage, ...l]);
     },
 
     reinitialiser: () => {},

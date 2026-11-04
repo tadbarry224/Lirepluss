@@ -48,6 +48,11 @@ export interface Profil {
   competences: string[];
   besoins: string;
   niveau: Niveau;
+  /** Attentes vis-à-vis du mentorat (axes du programme, TDR §6) */
+  attentes?: string[];
+  formatPrefere?: Seance["format"];
+  /** Le mentor a accepté la charte d'engagement (TDR §9) */
+  charteAcceptee?: boolean;
   // Champs spécifiques aux mentors
   titre?: string;
   organisation?: string;
@@ -121,4 +126,30 @@ export interface Recommandation {
   mentorId: string;
   score: number;
   raison: string;
+}
+
+/** Atelier thématique collectif (TDR §10, étape 4) */
+export interface Atelier {
+  id: string;
+  titre: string;
+  domaine: string;
+  animateurId: string;
+  date: string; // ISO
+  dureeMinutes: number;
+  format: "Visio" | "Présentiel";
+  lieu: string;
+  places: number;
+  inscrits: number;
+  description: string;
+}
+
+/** Témoignage publié après une séance (TDR §10, étape 7 : restitution des expériences) */
+export interface Temoignage {
+  id: string;
+  auteurNom: string;
+  auteurNiveau: string;
+  mentorId: string;
+  texte: string;
+  note: number;
+  date: string;
 }

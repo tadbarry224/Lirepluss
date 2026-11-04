@@ -1,4 +1,5 @@
 import type {
+  Atelier,
   Domaine,
   Mentor,
   Message,
@@ -7,6 +8,7 @@ import type {
   Profil,
   Ressource,
   Seance,
+  Temoignage,
 } from "./types";
 
 export const APP_NAME = "LirePlus";
@@ -225,3 +227,40 @@ export function initiales(nom: string) {
 export function lienVisio(seanceId: string) {
   return `https://meet.jit.si/LirePlus-Mentorat-${seanceId}`;
 }
+
+/** Attentes proposées dans le questionnaire d'accueil, rattachées aux axes du programme (TDR §6). */
+export const attentesProgramme = [
+  { id: "orientation", label: "M'orienter et construire mon parcours professionnel", axe: "Axe 1 · Orientation et développement du parcours professionnel" },
+  { id: "competences", label: "Apprendre auprès de professionnels et développer mes compétences", axe: "Axe 2 · Transmission des compétences et partage d'expériences" },
+  { id: "projet", label: "Structurer et développer mon projet ou mon entreprise", axe: "Axe 3 · Accompagnement entrepreneurial et réalisation de projets" },
+  { id: "campus", label: "Préparer mes études en France (Campus France)", axe: "Accompagnement Campus France" },
+  { id: "reseau", label: "Développer mon réseau professionnel", axe: "Axe 2 · Transmission des compétences et partage d'expériences" },
+  { id: "confiance", label: "Gagner en confiance et en leadership", axe: "Axe 1 · Orientation et développement du parcours professionnel" },
+];
+
+/** Charte d'engagement du mentor (TDR §9). */
+export const charteMentor = [
+  "Je possède une expérience professionnelle avérée dans mon domaine d'intervention.",
+  "Je fais preuve d'écoute, de bienveillance et de professionnalisme.",
+  "Je me rends disponible pour les séances que j'accepte.",
+  "Je partage mes expériences et mes connaissances sans contrepartie.",
+  "Je ne fais pas à la place du mentoré : je l'aide à développer son autonomie et sa capacité de décision.",
+];
+
+// Ateliers thématiques de démonstration (TDR §10, étape 4)
+export const ateliersInitiaux: Atelier[] = [
+  { id: "a1", titre: "Préparer son dossier et son entretien Campus France", domaine: "campus", animateurId: "m11", date: dansJours(3, 19), dureeMinutes: 90, format: "Visio", lieu: "En ligne", places: 30, inscrits: 22, description: "Structurer son projet d'études, relire ses lettres de motivation et s'entraîner aux questions de l'entretien, avec le témoignage d'une ancienne candidate." },
+  { id: "a2", titre: "Pitcher son projet en 3 minutes", domaine: "entrepreneuriat", animateurId: "m3", date: dansJours(4, 10), dureeMinutes: 120, format: "Présentiel", lieu: "CCFG, Conakry", places: 20, inscrits: 14, description: "Construire un pitch clair et convaincant, puis le présenter devant le groupe pour recevoir des retours." },
+  { id: "a3", titre: "De l'idée au livre : écrire pour la jeunesse", domaine: "culture", animateurId: "m7", date: dansJours(2, 15), dureeMinutes: 90, format: "Présentiel", lieu: "Salon du livre de jeunesse, CCFG", places: 25, inscrits: 25, description: "Atelier d'écriture : trouver son histoire, construire ses personnages et découvrir les métiers du livre." },
+  { id: "a4", titre: "Réussir son CV et son entretien d'embauche", domaine: "orientation", animateurId: "m8", date: dansJours(6, 18), dureeMinutes: 60, format: "Visio", lieu: "En ligne", places: 50, inscrits: 31, description: "Ce que les recruteurs attendent vraiment : relecture de CV en direct et simulation d'entretien." },
+  { id: "a5", titre: "Les bons réflexes de cybersécurité", domaine: "numerique", animateurId: "m9", date: dansJours(8, 18), dureeMinutes: 60, format: "Visio", lieu: "En ligne", places: 40, inscrits: 12, description: "Mots de passe, arnaques en ligne, protection de ses données : les gestes essentiels pour tous." },
+  { id: "a6", titre: "Prendre la parole en public sans stress", domaine: "leadership", animateurId: "m12", date: dansJours(10, 10), dureeMinutes: 120, format: "Présentiel", lieu: "Université de Labé", places: 30, inscrits: 9, description: "Exercices pratiques pour gérer son trac, poser sa voix et captiver son auditoire." },
+];
+
+// Témoignages de démonstration (TDR §10, étape 7 : restitution des expériences de mentorat)
+export const temoignagesInitiaux: Temoignage[] = [
+  { id: "t1", auteurNom: "Hawa K.", auteurNiveau: "Jeune diplômée", mentorId: "m8", texte: "Grâce aux conseils d'Ousmane, j'ai refait mon CV et préparé mes entretiens. Trois semaines plus tard, j'ai décroché mon premier poste !", note: 5, date: dansJours(-20) },
+  { id: "t2", auteurNom: "Alseny D.", auteurNiveau: "Porteur de projet", mentorId: "m3", texte: "Fatoumata m'a appris à aller voir mes clients avant de dépenser de l'argent. Mon projet de jus locaux a maintenant ses premiers revendeurs.", note: 5, date: dansJours(-15) },
+  { id: "t3", auteurNom: "Mariama S.", auteurNiveau: "Étudiante", mentorId: "m11", texte: "Néné m'a raconté son propre parcours et m'a aidée à rendre mon projet d'études cohérent. Je me sens beaucoup plus prête pour mon entretien.", note: 4, date: dansJours(-8) },
+  { id: "t4", auteurNom: "Ibrahima T.", auteurNiveau: "Étudiant", mentorId: "m7", texte: "Je n'osais montrer mes textes à personne. Kadiatou m'a encouragé et m'a expliqué comment fonctionne l'édition. J'ai terminé mon premier recueil de nouvelles.", note: 5, date: dansJours(-4) },
+];

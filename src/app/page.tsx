@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { APP_TAGLINE, EVENEMENT } from "@/lib/data";
 import { recommanderLocalement } from "@/lib/matching";
 import { formatDate, progression, useStore } from "@/lib/store";
 import { Avatar, Barre, Carte, CarteMentor, bouton, boutonSecondaire } from "@/components/ui";
 
 export default function TableauDeBord() {
-  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes } = useStore();
+  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes, mode, ateliers, mesAteliers } = useStore();
+  const router = useRouter();
   const aVenir = seances
     .filter((s) => s.statut === "planifiee" && new Date(s.date) >= new Date())
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -15,6 +18,13 @@ export default function TableauDeBord() {
   const aEvaluer = terminees.filter((s) => !s.note && !s.jeSuisLeMentor);
   const top = recommanderLocalement(profil, mentors, seances).slice(0, 3);
   const progMoy = objectifs.length ? Math.round(objectifs.reduce((a, o) => a + progression(o), 0) / objectifs.length) : 0;
+
+  const besoinsAIdentifier = profil.domaines.length === 0 || (profil.role === "mentore" && !profil.attentes?.length);
+
+  // Nouveau compte (mode Supabase) : on commence par l'étape 1, l'identification des besoins.
+  useEffect(() => {
+    if (mode === "supabase" && profil.domaines.length === 0) router.replace("/bienvenue");
+  }, [mode, profil.domaines.length, router]);
 
   const stats = [
     { label: "Séances à venir", valeur: aVenir.length, href: "/seances" },
@@ -46,6 +56,25 @@ export default function TableauDeBord() {
           </Link>
         ))}
       </section>
+
+      {besoinsAIdentifier && (
+        <Carte className="flex flex-wrap items-center justify-between gap-3 border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
+          <div>
+            <p className="font-semibold">Étape 1 : identifiez vos besoins</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">4 questions pour vous proposer les mentors et ateliers les plus adaptés.</p>
+          </div>
+          <Link href="/bienvenue" className={bouton}>Commencer</Link>
+        </Carte>
+      )}
+
+      {ateliers.some((a) => !mesAteliers.includes(a.id) && new Date(a.date) >= new Date() && a.inscrits < a.places) && (
+        <Carte className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">
+            👥 <strong>{ateliers.filter((a) => new Date(a.date) >= new Date()).length} ateliers thématiques</strong> à venir, animés par les mentors.
+          </p>
+          <Link href="/ateliers" className={boutonSecondaire}>Voir les ateliers</Link>
+        </Carte>
+      )}
 
       {aEvaluer.length > 0 && (
         <Carte className="flex flex-wrap items-center justify-between gap-3 border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
