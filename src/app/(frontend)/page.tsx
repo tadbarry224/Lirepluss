@@ -9,7 +9,7 @@ import { formatDate, progression, useStore } from "@/frontend/store";
 import { Avatar, Barre, Carte, CarteMentor, bouton, boutonSecondaire } from "@/frontend/components/ui";
 
 export default function TableauDeBord() {
-  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes, mode, ateliers, mesAteliers, demandes } = useStore();
+  const { profil, seances, objectifs, opportunites, messages, tousMentors: mentors, personnes, email, ateliers, mesAteliers, demandes } = useStore();
   const demandesRecues = demandes.filter((d) => d.jeSuisLeMentor && d.statut === "en_attente").length;
   const router = useRouter();
   const aVenir = seances
@@ -22,10 +22,10 @@ export default function TableauDeBord() {
 
   const besoinsAIdentifier = profil.domaines.length === 0 || (profil.role === "mentore" && !profil.attentes?.length);
 
-  // Nouveau compte (mode Supabase) : on commence par l'étape 1, l'identification des besoins.
+  // Nouveau compte (Supabase ou démo) : on commence par l'étape 1, l'identification des besoins.
   useEffect(() => {
-    if (mode === "supabase" && profil.domaines.length === 0) router.replace("/bienvenue");
-  }, [mode, profil.domaines.length, router]);
+    if (email && profil.domaines.length === 0) router.replace("/bienvenue");
+  }, [email, profil.domaines.length, router]);
 
   const stats = [
     { label: "Séances à venir", valeur: aVenir.length, href: "/seances" },

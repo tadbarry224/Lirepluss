@@ -65,14 +65,15 @@ export function Navigation() {
         <div className="mt-4 shrink-0 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
           <p className="truncate font-semibold">{profil.nom}</p>
           <p className="text-xs text-slate-500">{profil.role === "mentor" ? "Mentor" : "Mentoré"} · {profil.niveau}</p>
-          {mode === "supabase" ? (
-            <>
-              <p className="mt-1 truncate text-xs text-slate-500">{email}</p>
-              <button onClick={deconnexion} className="mt-2 text-xs font-medium text-rose-600 hover:underline">Se déconnecter</button>
-            </>
-          ) : (
-            <p className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">MODE DÉMO</p>
+          {email && <p className="mt-1 truncate text-xs text-slate-500">{email}</p>}
+          {mode === "demo" && (
+            <p className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+              {email ? "COMPTE DÉMO" : "MODE INVITÉ"}
+            </p>
           )}
+          <button onClick={deconnexion} className="mt-2 block text-xs font-medium text-rose-600 hover:underline">
+            {email ? "Se déconnecter" : "Quitter le mode invité"}
+          </button>
         </div>
       </aside>
       {ouvert && <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setOuvert(false)} />}

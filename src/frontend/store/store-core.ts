@@ -62,7 +62,19 @@ export type ResultatEnregistrement = { ok: true } | { ok: false; erreurs: Erreur
 
 export const StoreContext = createContext<Store | null>(null);
 
-/** Pages accessibles sans être connecté (mode Supabase) et affichées sans le menu. */
+/** Pages accessibles sans être connecté et affichées sans le menu. */
 export const PAGES_PUBLIQUES = ["/connexion", "/reinitialiser-mot-de-passe"];
+
+/** Adresse de la page de connexion, qui retient la page demandée pour y revenir ensuite. */
+export function versConnexion(chemin: string) {
+  return chemin === "/" || PAGES_PUBLIQUES.includes(chemin) ? "/connexion" : `/connexion?suivant=${encodeURIComponent(chemin)}`;
+}
+
+/** Page où aller après la connexion : celle demandée au départ, sinon le tableau de bord. */
+export function cheminApresConnexion() {
+  const suivant = new URLSearchParams(window.location.search).get("suivant");
+  // Uniquement un chemin interne (« /mentors »), jamais une adresse externe (« //site.com »).
+  return suivant && /^\/(?![/\\])/.test(suivant) ? suivant : "/";
+}
 
 export const uid = () => Math.random().toString(36).slice(2, 10);

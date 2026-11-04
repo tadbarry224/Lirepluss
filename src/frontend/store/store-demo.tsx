@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ateliersInitiaux,
   demandesInitiales,
@@ -14,8 +15,9 @@ import {
   temoignagesInitiaux,
 } from "@/shared/data";
 import { appelApi } from "@/frontend/lib/api";
+import { EVENEMENT_SESSION, deconnecterDemo, sessionCourante, trouverCompte, type CompteDemo, type SessionDemo } from "@/frontend/lib/comptes-demo";
 import type { ErreursProfil } from "@/shared/validation/profil";
-import { StoreContext, uid, type Store } from "./store-core";
+import { PAGES_PUBLIQUES, StoreContext, cheminApresConnexion, uid, versConnexion, type Store } from "./store-core";
 import type { DemandeMentorat, Mentor, Message, Objectif, Opportunite, Profil, Seance, Temoignage } from "@/shared/types";
 import type { ErreursDemande } from "@/shared/validation/demande";
 
@@ -47,8 +49,27 @@ const etatInitial: Etat = {
   demandes: demandesInitiales,
 };
 
+/** Données de l'invité (inchangées depuis les versions précédentes) ; chaque compte a les siennes. */
 const CLE = "lireplus:etat:v2";
+const cleDonnees = (s: SessionDemo) => (s.type === "invite" ? CLE : `${CLE}:${s.compteId}`);
 const ID_MOI = "moi";
+
+/** Point de départ d'un nouveau compte : son nom et son rôle, sans l'historique fictif de l'invité. */
+function etatNouveauCompte(c: CompteDemo): Etat {
+  return {
+    ...etatInitial,
+    profil: { nom: c.nom, role: c.role, ville: "", domaines: [], competences: [], besoins: "", niveau: "Étudiant" },
+    seances: [],
+    messages: [],
+    objectifs: [],
+    demandes: [],
+  };
+}
+
+function etatDeDepart(s: SessionDemo): Etat {
+  const compte = s.type === "compte" ? trouverCompte(s.compteId) : null;
+  return compte ? etatNouveauCompte(compte) : etatInitial;
+}
 
 /** Fiche publique de mentor tirée du profil : ajoutée si la personne est mentor, retirée sinon. */
 function ficheMentor(p: Profil, inscrits: Mentor[]): Mentor[] {
@@ -77,40 +98,84 @@ function ficheMentor(p: Profil, inscrits: Mentor[]): Mentor[] {
 }
 
 export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
-  const [etat, setEtat] = useState<Etat>(etatInitial);
-  const [pret, setPret] = useState(false);
-  const charge = useRef(false);
+  const router = useRouter();
+  const chemin = usePathname();
 
+  // undefined : session pas encore lue (premier rendu, identique côté serveur) ; null : personne n'est connecté.
+  const [session, setSession] = useState<SessionDemo | null | undefined>(undefined);
+  // Les données sont toujours accompagnées de la clé où elles sont rangées, pour ne jamais les écrire chez un autre compte.
+  const [donnees, setDonnees] = useState<{ cle: string | null; etat: Etat }>({ cle: null, etat: etatInitial });
+  const etat = donnees.etat;
+
+  // Lecture de la session après le montage (évite une différence d'hydratation), puis à chaque connexion / déconnexion,
+  // y compris depuis un autre onglet.
   useEffect(() => {
-    try {
-      const brut = localStorage.getItem(CLE);
-      // Lecture après le montage pour éviter une différence d'hydratation serveur/client.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (brut) setEtat({ ...etatInitial, ...JSON.parse(brut) });
-    } catch {
-      /* stockage indisponible : on garde les données de démo */
-    }
-    charge.current = true;
-    setPret(true);
+    const lireSession = () => {
+      const s = sessionCourante();
+      // Un compte supprimé du navigateur ne doit pas laisser une session fantôme.
+      setSession(s?.type === "compte" && !trouverCompte(s.compteId) ? null : s);
+    };
+    lireSession();
+    const surStockage = (e: StorageEvent) => {
+      if (e.key === null || e.key.startsWith("lireplus:session")) lireSession();
+    };
+    window.addEventListener(EVENEMENT_SESSION, lireSession);
+    window.addEventListener("storage", surStockage);
+    return () => {
+      window.removeEventListener(EVENEMENT_SESSION, lireSession);
+      window.removeEventListener("storage", surStockage);
+    };
   }, []);
 
+  // Chargement des données de la personne connectée
   useEffect(() => {
-    if (!charge.current) return;
+    if (!session) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDonnees({ cle: null, etat: etatInitial });
+      return;
+    }
+    const cle = cleDonnees(session);
+    const depart = etatDeDepart(session);
+    let etatLu = depart;
     try {
-      localStorage.setItem(CLE, JSON.stringify(etat));
+      const brut = localStorage.getItem(cle);
+      if (brut) etatLu = { ...depart, ...JSON.parse(brut) };
+    } catch {
+      /* stockage indisponible : on garde le point de départ */
+    }
+    setDonnees({ cle, etat: etatLu });
+  }, [session]);
+
+  useEffect(() => {
+    if (!donnees.cle) return;
+    try {
+      localStorage.setItem(donnees.cle, JSON.stringify(donnees.etat));
     } catch {
       /* ignore */
     }
-  }, [etat]);
+  }, [donnees]);
 
-  const maj = useCallback((f: (e: Etat) => Partial<Etat>) => setEtat((e) => ({ ...e, ...f(e) })), []);
+  // Sans session, seules les pages publiques sont accessibles ; une fois connecté, la page de connexion renvoie à l'application.
+  useEffect(() => {
+    if (session === undefined) return;
+    if (!session && !PAGES_PUBLIQUES.includes(chemin)) router.replace(versConnexion(chemin));
+    if (session && chemin === "/connexion") router.replace(cheminApresConnexion());
+  }, [session, chemin, router]);
+
+  const compte = session?.type === "compte" ? trouverCompte(session.compteId) : null;
+  const pret = Boolean(session) && donnees.cle === (session ? cleDonnees(session) : null);
+
+  const maj = useCallback(
+    (f: (e: Etat) => Partial<Etat>) => setDonnees((d) => ({ ...d, etat: { ...d.etat, ...f(d.etat) } })),
+    [],
+  );
   const tousMentors = [...mentorsDemo, ...etat.mentorsInscrits];
 
   const store: Store = {
     ...etat,
     mode: "demo",
     pret,
-    email: null,
+    email: compte?.email ?? null,
     erreur: null,
     tousMentors,
     ateliers: ateliersInitiaux.map((a) => ({ ...a, inscrits: a.inscrits + (etat.mesAteliers.includes(a.id) ? 1 : 0) })),
@@ -187,8 +252,15 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         ],
       }));
       // Les mentors de démonstration acceptent automatiquement après quelques secondes
+      // (sauf si l'on a changé de compte entre-temps)
+      const cleAuDepart = donnees.cle;
       setTimeout(
-        () => maj((e) => ({ demandes: e.demandes.map((x) => (x.id === id ? { ...x, statut: "acceptee", reponse: REPONSE_AUTOMATIQUE } : x)) })),
+        () =>
+          setDonnees((d) =>
+            d.cle !== cleAuDepart
+              ? d
+              : { ...d, etat: { ...d.etat, demandes: d.etat.demandes.map((x) => (x.id === id ? { ...x, statut: "acceptee", reponse: REPONSE_AUTOMATIQUE } : x)) } },
+          ),
         2500,
       );
       return { ok: true };
@@ -209,9 +281,16 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
           ...e.temoignagesPublies,
         ],
       })),
-    reinitialiser: () => setEtat(etatInitial),
-    deconnexion: () => {},
+    reinitialiser: () => setDonnees((d) => ({ ...d, etat: session ? etatDeDepart(session) : etatInitial })),
+    deconnexion: deconnecterDemo,
   };
 
-  return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
+  // Tant que personne n'est connecté, seules les pages publiques s'affichent.
+  const afficher = PAGES_PUBLIQUES.includes(chemin) || pret;
+
+  return (
+    <StoreContext.Provider value={store}>
+      {afficher ? children : <p className="py-20 text-center text-sm text-slate-500">Chargement…</p>}
+    </StoreContext.Provider>
+  );
 }

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { profilInitial } from "@/shared/data";
 import { appelApi } from "@/frontend/lib/api";
 import type { ErreursProfil } from "@/shared/validation/profil";
-import { PAGES_PUBLIQUES, StoreContext, type Store } from "./store-core";
+import { PAGES_PUBLIQUES, StoreContext, cheminApresConnexion, versConnexion, type Store } from "./store-core";
 import { couleurPour, supabase } from "@/frontend/lib/supabase";
 import type { Atelier, Etape, Mentor, Message, Objectif, Opportunite, Profil, Role, Seance, StatutDemande } from "@/shared/types";
 import type { ErreursDemande } from "@/shared/validation/demande";
@@ -202,8 +202,8 @@ export function SupabaseStoreProvider({ children }: { children: React.ReactNode 
   // Redirection vers la page de connexion si nécessaire
   useEffect(() => {
     if (!sessionVerifiee) return;
-    if (!userId && !PAGES_PUBLIQUES.includes(chemin)) router.replace("/connexion");
-    if (userId && chemin === "/connexion") router.replace("/");
+    if (!userId && !PAGES_PUBLIQUES.includes(chemin)) router.replace(versConnexion(chemin));
+    if (userId && chemin === "/connexion") router.replace(cheminApresConnexion());
   }, [sessionVerifiee, userId, chemin, router]);
 
   // ---------- Chargement des données ----------
