@@ -1,7 +1,7 @@
-// Génère supabase/seed.sql à partir de src/lib/data.ts (Node 22.6+ : prise en charge native du TypeScript).
+// Génère supabase/seed.sql à partir de src/shared/data.ts (Node 22.6+ : prise en charge native du TypeScript).
 // Usage : node scripts/generer-seed.mjs
 import { writeFileSync } from "node:fs";
-import { ateliersInitiaux, mentors, opportunitesInitiales, temoignagesInitiaux } from "../src/lib/data.ts";
+import { ateliersInitiaux, mentors, opportunitesInitiales, temoignagesInitiaux } from "../src/shared/data.ts";
 
 const q = (v) => (v === null || v === undefined ? "null" : `'${String(v).replaceAll("'", "''")}'`);
 const arr = (a) => `array[${a.map(q).join(", ")}]::text[]`;

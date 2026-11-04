@@ -29,6 +29,7 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists attentes text[] not null default '{}';
 alter table public.profiles add column if not exists format_prefere text;
 alter table public.profiles add column if not exists charte_acceptee boolean not null default false;
+alter table public.profiles add column if not exists photo_url text;
 
 -- Identifiant du profil de l'utilisateur connecté
 create or replace function public.mon_profil_id()
@@ -159,12 +160,11 @@ alter table public.objectifs    enable row level security;
 alter table public.opportunites enable row level security;
 alter table public.favoris      enable row level security;
 
--- Profils : visibles par tous les utilisateurs connectés, modifiables par leur propriétaire
+-- Profils : visibles par tous les utilisateurs connectés.
+-- Aucune règle d'écriture : seul le backend (/api/profil, clé secrète) modifie les profils, après validation.
 drop policy if exists "profils lisibles" on public.profiles;
 create policy "profils lisibles" on public.profiles for select to authenticated using (true);
 drop policy if exists "profil modifiable par son propriétaire" on public.profiles;
-create policy "profil modifiable par son propriétaire" on public.profiles for update to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Séances : visibles et modifiables par le mentor et le mentoré concernés
 drop policy if exists "séances des participants" on public.seances;
@@ -232,6 +232,14 @@ create policy "témoignages lisibles" on public.temoignages for select to authen
 drop policy if exists "publier un témoignage" on public.temoignages;
 create policy "publier un témoignage" on public.temoignages for insert to authenticated
   with check (auteur_id = public.mon_profil_id());
+
+-- =====================================================================
+-- Photos de profil : stockage public en lecture, écrit uniquement par le backend
+-- =====================================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 -- =====================================================================
 -- Temps réel : messages et séances

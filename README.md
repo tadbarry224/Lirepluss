@@ -41,17 +41,18 @@ Le mode démo reste un filet de sécurité pour la présentation au jury.
 2. **SQL Editor → New query** : coller le contenu de [`supabase/schema.sql`](supabase/schema.sql), puis **Run**.
 3. Nouvelle requête : coller [`supabase/seed.sql`](supabase/seed.sql) (mentors et opportunités de démo), puis **Run**.
 4. **Authentication → Sign In / Providers → Email** : désactiver **Confirm email** (pratique pendant le hackathon : pas d'email à valider).
-5. **Project Settings → API Keys** : copier l'URL du projet et la clé *publishable* dans `.env.local` :
+5. **Project Settings → API Keys** : copier l'URL du projet, la clé *publishable* et la clé *secret* dans `.env.local` :
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
    NEXT_PUBLIC_SUPABASE_KEY=sb_publishable_...
+   SUPABASE_SECRET_KEY=sb_secret_...      (serveur uniquement : ne jamais la partager)
    ```
 6. Relancer `pnpm dev`.
 
 Pour tester l'interaction : créer un compte **mentor** dans un navigateur et un compte **mentoré** dans une fenêtre de
 navigation privée (ou sur un téléphone), puis réserver une séance et échanger des messages.
 
-Si les données de démo changent dans `src/lib/data.ts`, régénérer le seed : `node scripts/generer-seed.mjs`.
+Si les données de démo changent dans `src/shared/data.ts`, régénérer le seed : `node scripts/generer-seed.mjs`.
 
 ## Démarrage
 
@@ -73,13 +74,44 @@ Ouvrir http://localhost:3000.
 
 ## Structure
 
+Un seul projet Next.js, organisé en trois couches :
+
 ```
 src/
-  app/                    pages (une par module) + api/recommandation
-  components/             Navigation, composants UI
-  lib/
-    data.ts               données de démonstration (mentors, domaines, ressources…)
-    matching.ts           algorithme de compatibilité local
-    store.tsx             état de l'application (React Context + localStorage)
-    types.ts              types TypeScript
+├─ app/                         Routes Next.js (fichiers courts, ils délèguent aux couches ci-dessous)
+│  ├─ (frontend)/               Pages de l'application (le dossier entre parenthèses n'apparaît pas dans l'URL)
+│  │  ├─ page.tsx               Tableau de bord
+│  │  ├─ bienvenue/ profil/ connexion/ mentors/ seances/ ateliers/ messages/ …
+│  └─ api/                      Points d'entrée du backend (HTTP)
+│     ├─ profil/route.ts        PUT : valider et enregistrer le profil
+│     ├─ profil/photo/route.ts  POST : vérifier et enregistrer la photo
+│     ├─ recommandation/        POST : mentors recommandés par l'IA
+│     └─ parcours/              POST : parcours personnalisé par l'IA
+│
+├─ frontend/                    Code exécuté dans le navigateur
+│  ├─ components/               Composants d'interface (ui, Navigation, ChampPhoto…)
+│  ├─ store/                    État de l'application : mode démo (localStorage) ou Supabase
+│  └─ lib/                      Client Supabase navigateur, appels à l'API, traitement d'image
+│
+├─ backend/                     Code exécuté uniquement sur le serveur (protégé par "server-only")
+│  ├─ db/supabase-admin.ts      Client Supabase avec la clé secrète
+│  ├─ services/                 Logique métier : profils, authentification, IA (Claude)
+│  └─ validation/               Contrôles propres au serveur (photos : taille, vrai format)
+│
+└─ shared/                      Code commun au frontend et au backend
+   ├─ types.ts                  Types TypeScript
+   ├─ data.ts                   Domaines, données de démonstration, charte, attentes
+   ├─ matching.ts, parcours.ts  Algorithmes locaux (repli quand l'IA est indisponible)
+   └─ validation/profil.ts      Règles de validation du profil (zod), appliquées des deux côtés
+supabase/                       Schéma SQL (tables, règles RLS, stockage) et données de démo
+scripts/                        Génération du seed SQL
 ```
+
+### Création et modification du profil
+
+1. Le formulaire (`/bienvenue` ou `/profil`) vérifie les champs **dans le navigateur** avec `shared/validation/profil.ts` pour un retour immédiat.
+2. Il envoie le profil à **`PUT /api/profil`**. Le backend **revalide avec les mêmes règles** : c'est lui qui a le dernier mot.
+3. En mode Supabase, le backend identifie l'utilisateur par son jeton, puis écrit en base avec la clé secrète.
+   Les règles RLS **interdisent aux navigateurs de modifier les profils directement** : toute écriture passe par le backend.
+4. La photo est recadrée et réduite dans le navigateur (320 px), puis envoyée à **`POST /api/profil/photo`**.
+   Le serveur vérifie la taille (2 Mo maximum) et le **vrai format** du fichier (signature binaire JPEG, PNG ou WebP), puis la stocke dans Supabase Storage.
