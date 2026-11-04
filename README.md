@@ -30,7 +30,7 @@ Plateforme web de mise en relation entre mentors et mentorés, développée pour
 | | Mode démo | Mode multi-utilisateurs |
 |---|---|---|
 | Configuration | Aucune | Projet Supabase (gratuit) |
-| Comptes | Non (utilisateur « Invité ») | Inscription / connexion mentor ou mentoré |
+| Comptes | Oui, gardés dans ce navigateur (ou bouton « Continuer en invité ») | Inscription / connexion mentor ou mentoré, partagés en ligne |
 | Données | Dans le navigateur | Base PostgreSQL partagée, sécurisée par RLS |
 | Messages | Réponses simulées | Chat **en temps réel** entre vraies personnes |
 

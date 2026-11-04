@@ -62,7 +62,9 @@ src/frontend/
 **Règle :** une page ne parle jamais directement à la base ni au serveur. Elle utilise `useStore()`,
 et c'est le store qui décide d'appeler Supabase ou le backend. Ainsi, la même page marche en mode démo et en mode Supabase.
 
-**Accès aux pages :** en mode Supabase, un visiteur non connecté est renvoyé vers `/connexion`.
+**Accès aux pages :** dans les deux modes, un visiteur non connecté est renvoyé vers `/connexion?suivant=<page demandée>`,
+puis ramené sur cette page après connexion. En mode démo, les comptes sont gérés par `frontend/lib/comptes-demo.ts`
+(mot de passe haché, jamais stocké en clair ; données séparées par compte) et le bouton « Continuer en invité » reste disponible pour le jury.
 Seules `/connexion` et `/reinitialiser-mot-de-passe` sont publiques (`PAGES_PUBLIQUES` dans `store-core.ts`).
 
 ## 2. Backend
@@ -131,7 +133,7 @@ En plus des tables :
 | `SUPABASE_SECRET_KEY` | backend uniquement | **oui** — ne jamais la commiter ni la partager |
 | `ANTHROPIC_API_KEY` | backend uniquement | **oui** |
 
-Sans `NEXT_PUBLIC_SUPABASE_URL`, l'application démarre en **mode démo** (pas de comptes, données locales).
+Sans `NEXT_PUBLIC_SUPABASE_URL`, l'application démarre en **mode démo** : les comptes et les données restent dans le navigateur.
 Le fichier `.env.local` est ignoré par Git ; seul `.env.example` est versionné.
 
 ## 5. GitHub
